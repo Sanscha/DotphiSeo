@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "208584120004",
+    "project_id": "dotphiseoapp",
+    "storage_bucket": "dotphiseoapp.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:208584120004:android:00b22f5ac2d5641b269b91",
+        "android_client_info": {
+          "package_name": "com.dotphi.dotphi_seo_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "208584120004-u080b2sutm0btl2i0h93pvcn3cciiihl.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.dotphi.dotphi_seo_app",
+            "certificate_hash": "aef3af4b2198afec0cc31f8ad2fe1ade935c45d4"
+          }
+        },
+        {
+          "client_id": "208584120004-aa28ektv9en5pkjrsg6b2ur1418l29ec.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDeTv9alM1u5NKuRb40nz_DWY2HJVK9LNQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "208584120004-1frqf4vigs1aa0ud3tjtb227st5dh1su.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

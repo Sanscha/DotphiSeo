@@ -18,22 +18,22 @@ import 'package:intl/intl.dart';
 
 import 'notification_screen.dart';
 
-class ApiScreen extends StatefulWidget {
+class PaidLeadsScreen extends StatefulWidget {
   final User user;
   final selectedProjectCode;
   final String projectUrl;
 
-  ApiScreen({
+  PaidLeadsScreen({
     required this.user,
     required this.selectedProjectCode,
     required this.projectUrl,
   });
 
   @override
-  _ApiScreenState createState() => _ApiScreenState();
+  _PaidLeadsScreenState createState() => _PaidLeadsScreenState();
 }
 
-class _ApiScreenState extends State<ApiScreen> {
+class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
   List<Map<String, dynamic>> apiData = [];
   List<Map<String, dynamic>> filteredData = [];
   List<Map<String, dynamic>> sortedData = [];
@@ -139,12 +139,12 @@ class _ApiScreenState extends State<ApiScreen> {
             monthlyApi: 'https://clients.dotphi.com/Api/Login/getMonthlyLeads'),
         _fetchLeadCountsFromApi(projectId,
             tillDateApi:
-                'https://clients.dotphi.com/Api/login/getCountofliveLeads',
+            'https://clients.dotphi.com/Api/login/getCountofliveLeads',
             todayApi: 'https://clients.dotphi.com/Api/login/getTodayliveLeads',
             weeklyApi:
-                'https://clients.dotphi.com/Api/login/getWeeklyliveLeads',
+            'https://clients.dotphi.com/Api/login/getWeeklyliveLeads',
             monthlyApi:
-                'https://clients.dotphi.com/Api/login/getMonthlyLiveLeads'),
+            'https://clients.dotphi.com/Api/login/getMonthlyLiveLeads'),
       ]);
 
       // Extract results from Future.wait
@@ -154,7 +154,7 @@ class _ApiScreenState extends State<ApiScreen> {
       // Update the state with fetched counts
       setState(() {
         _tillDateLeadCount =
-            (regularCounts['tillDate']! + liveCounts['tillDate']!);
+        (regularCounts['tillDate']! + liveCounts['tillDate']!);
         _todayLeadCount = regularCounts['today']! + liveCounts['today']!;
         _weeklyLeadCount = regularCounts['weekly']! + liveCounts['weekly']!;
         _monthlyLeadCount = regularCounts['monthly']! + liveCounts['monthly']!;
@@ -170,12 +170,12 @@ class _ApiScreenState extends State<ApiScreen> {
   }
 
   Future<Map<String, int>> _fetchLeadCountsFromApi(
-    String? projectId, {
-    required String tillDateApi,
-    required String todayApi,
-    required String weeklyApi,
-    required String monthlyApi,
-  }) async {
+      String? projectId, {
+        required String tillDateApi,
+        required String todayApi,
+        required String weeklyApi,
+        required String monthlyApi,
+      }) async {
     // Define a map to hold the results
     final Map<String, int> leadCounts = {
       'tillDate': 0,
@@ -265,7 +265,7 @@ class _ApiScreenState extends State<ApiScreen> {
     });
 
     final url =
-        Uri.parse('https://clients.dotphi.com/Api/Login/multiple_project');
+    Uri.parse('https://clients.dotphi.com/Api/Login/multiple_project');
     final response = await http.post(
       url,
       body: {
@@ -311,7 +311,7 @@ class _ApiScreenState extends State<ApiScreen> {
     });
 
     final url =
-        Uri.parse('https://clients.dotphi.com/Api/Login/multiple_project');
+    Uri.parse('https://clients.dotphi.com/Api/Login/multiple_project');
     final response = await http.post(
       url,
       body: {
@@ -327,7 +327,7 @@ class _ApiScreenState extends State<ApiScreen> {
         prefs.setBool('isLoggedIn', true);
         final data = jsonData['data'] as List<dynamic>;
         final uniqueCodes =
-            data.map((item) => item['project_unique_code'].toString()).toList();
+        data.map((item) => item['project_unique_code'].toString()).toList();
         return uniqueCodes;
       }
     }
@@ -384,7 +384,7 @@ class _ApiScreenState extends State<ApiScreen> {
       if (leadResponse.statusCode == 200) {
         final leadResponseData = jsonDecode(leadResponse.body);
         final leadData =
-            List<Map<String, dynamic>>.from(leadResponseData['data']);
+        List<Map<String, dynamic>>.from(leadResponseData['data']);
 
         setState(() {
           apiData.addAll(leadData);
@@ -403,7 +403,7 @@ class _ApiScreenState extends State<ApiScreen> {
       if (liveChatResponse.statusCode == 200) {
         final liveChatResponseData = jsonDecode(liveChatResponse.body);
         final liveChatData =
-            List<Map<String, dynamic>>.from(liveChatResponseData['data']);
+        List<Map<String, dynamic>>.from(liveChatResponseData['data']);
 
         setState(() {
           apiData.addAll(liveChatData);
@@ -448,13 +448,13 @@ class _ApiScreenState extends State<ApiScreen> {
         print(
             'Lead Response Data: $leadResponseData'); // Print the lead response data
         List<Map<String, dynamic>> leadData =
-            List<Map<String, dynamic>>.from(leadResponseData['data']);
+        List<Map<String, dynamic>>.from(leadResponseData['data']);
 
         // Add a source and gif_path field to each item in the lead data
         for (var item in leadData) {
           item['source'] = 'lead'; // Mark as lead
           item['gif_path'] =
-              'assets/images/email.gif'; // Set the GIF path for lead data
+          'assets/images/email.gif'; // Set the GIF path for lead data
         }
 
         combinedData.addAll(leadData);
@@ -474,13 +474,13 @@ class _ApiScreenState extends State<ApiScreen> {
         print(
             'Live Chat Response Data: $liveChatResponseData'); // Print the live chat response data
         List<Map<String, dynamic>> liveChatData =
-            List<Map<String, dynamic>>.from(liveChatResponseData['data']);
+        List<Map<String, dynamic>>.from(liveChatResponseData['data']);
 
         // Add a source and gif_path field to each item in the live chat data
         for (var item in liveChatData) {
           item['source'] = 'livechat'; // Mark as livechat
           item['gif_path'] =
-              'assets/images/chatleads.gif'; // Set the GIF path for live chat data
+          'assets/images/chatleads.gif'; // Set the GIF path for live chat data
         }
 
         combinedData.addAll(liveChatData);
@@ -579,7 +579,7 @@ class _ApiScreenState extends State<ApiScreen> {
           );
         },
         transitionDuration:
-            Duration(milliseconds: 600), // Duration of the transition
+        Duration(milliseconds: 600), // Duration of the transition
       ),
     );
 
@@ -614,10 +614,10 @@ class _ApiScreenState extends State<ApiScreen> {
               : data['added_date'];
           final date = DateTime.parse(dateStr);
           final start =
-              DateTime(selectedRange!.start.year, selectedRange!.start.month);
+          DateTime(selectedRange!.start.year, selectedRange!.start.month);
           final end =
-              DateTime(selectedRange!.end.year, selectedRange!.end.month + 1)
-                  .subtract(Duration(days: 1));
+          DateTime(selectedRange!.end.year, selectedRange!.end.month + 1)
+              .subtract(Duration(days: 1));
 
           return date.isAfter(start.subtract(Duration(days: 1))) &&
               date.isBefore(end.add(Duration(days: 1))) &&
@@ -650,7 +650,7 @@ class _ApiScreenState extends State<ApiScreen> {
 
     final Uri leadUrl = Uri.parse('https://clients.dotphi.com/Api/login/lead');
     final Uri livechatUrl =
-        Uri.parse('https://clients.dotphi.com/Api/Login/livechat');
+    Uri.parse('https://clients.dotphi.com/Api/Login/livechat');
 
     // Fetch lead data
     final leadResponse = await http.post(
@@ -683,7 +683,7 @@ class _ApiScreenState extends State<ApiScreen> {
       print(
           'Live Chat Data: $livechatData'); // Print the received live chat data
       final livechatList =
-          List<Map<String, dynamic>>.from(livechatData['data']);
+      List<Map<String, dynamic>>.from(livechatData['data']);
       combinedData.addAll(livechatList);
     } else {
       print(
@@ -698,9 +698,9 @@ class _ApiScreenState extends State<ApiScreen> {
       // Determine which date field to sort by
       if (combinedData.isNotEmpty) {
         final hasAddedDate =
-            combinedData.every((item) => item.containsKey('added_date'));
+        combinedData.every((item) => item.containsKey('added_date'));
         final hasCreatedDate =
-            combinedData.every((item) => item.containsKey('created_date'));
+        combinedData.every((item) => item.containsKey('created_date'));
 
         if (hasAddedDate) {
           sortedData.sort((a, b) {
@@ -745,7 +745,7 @@ class _ApiScreenState extends State<ApiScreen> {
     // print(jsonData);
     final data = jsonData['data'] as List<dynamic>;
     final project = data.firstWhere(
-        (item) => item['project_unique_code'] == projectCode,
+            (item) => item['project_unique_code'] == projectCode,
         orElse: () => null);
     if (project != null) {
       final url = project['project_url'];
@@ -804,7 +804,7 @@ class _ApiScreenState extends State<ApiScreen> {
                     setState(() {
                       selectedProjectCode = newValue;
                       selectedProjectId =
-                          _projectIds[newValue!]; // Update selectedProjectId
+                      _projectIds[newValue!]; // Update selectedProjectId
                     });
                     await _saveSelectedProjectCode(newValue ?? '');
                     await _fetchProjectUrl(newValue ?? '');
@@ -1011,32 +1011,47 @@ class _ApiScreenState extends State<ApiScreen> {
                 ),
               ),
             ],
-            title: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Row(
-                children: 'Leads'.split('').map((letter) {
-                  int fontSize = 40 - 'Leads'.indexOf(letter) * 4;
-                  return Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 1.0),
-                    child: Text(
-                      letter,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: fontSize.toDouble(),
-                        color: Colors.blue.shade900,
-                        shadows: [
-                          Shadow(
-                            offset: Offset(1.0, 1.0),
-                            blurRadius: 2.0,
-                            color: Colors.black.withOpacity(0.5),
-                          ),
-                        ],
+          title: Row(
+            children: List.generate('Paid-leads'.length, (index) {
+              // Calculate font size based on the index
+              double fontSize =
+                  30 - index * 1.0; // Adjust base size and decrement as needed
+
+              // Ensure the font size does not become too small
+              fontSize = fontSize < 12.0 ? 12.0 : fontSize; // Minimum font size
+
+              // Get the letter at the current index
+              String letter = 'Paid-leads'[index];
+
+              // Skip the font size calculation for spaces
+              if (letter.trim().isEmpty) {
+                return SizedBox(width: 4.0); // Adjust space width as needed
+              }
+
+              return Padding(
+                padding: EdgeInsets.symmetric(
+                    horizontal: 0.0), // Adjust padding if needed
+                child: Text(
+                  letter,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: fontSize,
+                    color: Colors.blue.shade900,
+                    shadows: [
+                      Shadow(
+                        offset: Offset(1.0, 1.0),
+                        blurRadius: 2.0,
+                        color: Colors.black.withOpacity(0.5),
                       ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            )
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ),
+
+
+
 
 
         ),
@@ -1094,7 +1109,7 @@ class _ApiScreenState extends State<ApiScreen> {
                 SizedBox(height: 10),
                 Padding(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   child: Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -1121,7 +1136,7 @@ class _ApiScreenState extends State<ApiScreen> {
                             },
                             style: TextStyle(fontSize: 16),
                             decoration: InputDecoration(
-                              hintText: 'Search leads',
+                              hintText: 'Search paid-leads',
                               border: InputBorder.none,
                               hintStyle: TextStyle(
                                 fontFamily: 'Poppins',
@@ -1150,9 +1165,9 @@ class _ApiScreenState extends State<ApiScreen> {
                 ),
                 selectedRange != null
                     ? Text(
-                        'Leads from:  ${DateFormat('dd-MM-yyyy').format(selectedRange!.start)}  to  ${DateFormat('dd-MM-yyyy').format(selectedRange!.end)}',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                      )
+                  'Leads from:  ${DateFormat('dd-MM-yyyy').format(selectedRange!.start)}  to  ${DateFormat('dd-MM-yyyy').format(selectedRange!.end)}',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                )
                     : Container(),
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
@@ -1167,9 +1182,9 @@ class _ApiScreenState extends State<ApiScreen> {
                             title: 'Total Till Date',
                             count: isLoading
                                 ? SpinKitCircle(
-                                    color: Colors.white,
-                                    size: 20.0,
-                                  )
+                              color: Colors.white,
+                              size: 20.0,
+                            )
                                 : _tillDateLeadCount,
                             color: Colors.blue,
                           ),
@@ -1177,9 +1192,9 @@ class _ApiScreenState extends State<ApiScreen> {
                             title: 'Today',
                             count: isLoading
                                 ? SpinKitCircle(
-                                    color: Colors.white,
-                                    size: 20.0,
-                                  )
+                              color: Colors.white,
+                              size: 20.0,
+                            )
                                 : _todayLeadCount,
                             color: Colors.green,
                           ),
@@ -1187,9 +1202,9 @@ class _ApiScreenState extends State<ApiScreen> {
                             title: 'This week',
                             count: isLoading
                                 ? SpinKitCircle(
-                                    color: Colors.white,
-                                    size: 20.0,
-                                  )
+                              color: Colors.white,
+                              size: 20.0,
+                            )
                                 : _weeklyLeadCount,
                             color: Colors.orange,
                           ),
@@ -1197,9 +1212,9 @@ class _ApiScreenState extends State<ApiScreen> {
                             title: 'This month',
                             count: isLoading
                                 ? SpinKitCircle(
-                                    color: Colors.white,
-                                    size: 20.0,
-                                  )
+                              color: Colors.white,
+                              size: 20.0,
+                            )
                                 : _monthlyLeadCount,
                             color: Colors.purple,
                           ),
@@ -1217,10 +1232,10 @@ class _ApiScreenState extends State<ApiScreen> {
                               context,
                               MaterialPageRoute(
                                   builder: (context) => GroupsScreen(
-                                        onGroupUpdated: () {},
-                                        group: {},
-                                        projectCode: widget.selectedProjectCode,
-                                      )),
+                                    onGroupUpdated: () {},
+                                    group: {},
+                                    projectCode: widget.selectedProjectCode,
+                                  )),
                             );
                           }
                         },
@@ -1231,367 +1246,367 @@ class _ApiScreenState extends State<ApiScreen> {
                 Expanded(
                   child: isLoading
                       ? Container(
-                          alignment: Alignment.center,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                    alignment: Alignment.center,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SpinKitCircle(
+                          color: Colors.blue.shade900,
+                          size: 100.0,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'Loading...',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                      : apiData.isEmpty
+                      ? Container(
+                    alignment: Alignment.center,
+                    child: Image.asset(
+                      'assets/images/nodata.png',
+                      height: 150,
+                      width: 150,
+                    ),
+                  )
+                      : filteredData.isEmpty && !showNoResults
+                      ? ListView.builder(
+                    itemCount: sortedData.length,
+                    itemBuilder: (context, index) {
+                      final data = sortedData[index];
+                      final email = data['email'] ?? '';
+                      final name = data['name'] ?? '';
+                      final phone = data['phone'] ?? '';
+                      String status = data['contact'] ?? '';
+
+                      // Determine which date field is present
+                      final date = data.containsKey('added_date')
+                          ? data['added_date']
+                          : data.containsKey('created_date')
+                          ? data['created_date']
+                          : '';
+
+                      // Parse and format the date if it's present
+                      DateTime? parsedDate;
+                      if (date.isNotEmpty) {
+                        try {
+                          parsedDate = DateTime.parse(date);
+                        } catch (e) {
+                          parsedDate =
+                          null; // Handle parsing errors
+                        }
+                      }
+
+                      final formattedDate = parsedDate != null
+                          ? DateFormat('dd/MM/yy')
+                          .format(parsedDate)
+                          : '';
+
+                      return Container(
+                        margin: EdgeInsets.symmetric(
+                            vertical: 8, horizontal: 16),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          color: Colors.white,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.5),
+                              spreadRadius: 3,
+                              blurRadius: 5,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: ListTile(
+                          title: Row(
                             children: [
-                              SpinKitCircle(
-                                color: Colors.blue.shade900,
-                                size: 100.0,
-                              ),
-                              SizedBox(height: 16),
-                              Text(
-                                'Loading...',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                  CrossAxisAlignment.start,
+                                  children: [
+                                    // Container(
+                                    //   width: 110,
+                                    //   height: 25,
+                                    //   decoration: BoxDecoration(
+                                    //       color: status=='uncontacted'?Colors.red:Colors.blue.shade900,
+                                    //       borderRadius: BorderRadius.circular(10)),
+                                    //   child: Center(
+                                    //     child: Text(
+                                    //       status,
+                                    //       style: TextStyle(color: Colors.white),
+                                    //     ),
+                                    //   ),
+                                    // ),
+                                    // SizedBox(height: 2,),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          name,
+                                          style: TextStyle(
+                                            fontFamily: 'Poppins',
+                                            fontWeight: status ==
+                                                'uncontacted'
+                                                ? FontWeight.bold
+                                                : FontWeight
+                                                .normal,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                        Text(
+                                          formattedDate,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontStyle:
+                                            FontStyle.italic,
+                                            fontFamily: 'Poppins',
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Column(
+                                      children: [
+                                        Text(
+                                          phone,
+                                          style: TextStyle(
+                                            fontFamily: 'Poppins',
+                                            fontSize: 14,
+                                            fontWeight: status ==
+                                                'uncontacted'
+                                                ? FontWeight.bold
+                                                : FontWeight
+                                                .normal,
+                                          ),
+                                        ),
+                                        IconButton(
+                                            onPressed: () {
+                                              launchDialer(phone);
+                                            },
+                                            icon: Icon(
+                                              Icons.phone,
+                                              color: Colors.green,
+                                            )),
+                                        ElevatedButton(
+                                            style: ElevatedButton
+                                                .styleFrom(
+                                                backgroundColor:
+                                                Colors
+                                                    .blue
+                                                    .shade900),
+                                            onPressed: () {
+                                              navigateToKeywordDetailScreen(
+                                                  index);
+                                            },
+                                            child: Text(
+                                              'Details',
+                                              style: TextStyle(
+                                                  color: Colors
+                                                      .white),
+                                            ))
+                                      ],
+                                    ),
+                                  ],
                                 ),
+                              )
+                            ],
+                          ),
+                          onTap: () {
+                            navigateToKeywordDetailScreen(index);
+                          },
+                        ),
+                      );
+                    },
+                  )
+                      : filteredData.isEmpty && showNoResults
+                      ? Container(
+                    alignment: Alignment.center,
+                    child: Text(
+                      'No search data found',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  )
+                      : ListView.builder(
+                    itemCount: filteredData.length,
+                    itemBuilder: (context, index) {
+                      final data = filteredData[index];
+                      // Combine both date fields, prioritizing 'added_date' if both are present
+                      final date = data['added_date'] ??
+                          data['created_date'] ??
+                          '';
+                      final email = data['email'] ?? '';
+                      final name = data['name'] ?? '';
+                      final phone = data['phone'] ?? '';
+                      String status = data['contact'] ?? '';
+                      final formattedDate =
+                      calculateTimeDifference(date);
+
+                      return GestureDetector(
+                        onLongPress: () {
+                          navigateToKeywordDetailScreen(
+                              index);
+                        },
+                        onLongPressEnd: (details) {
+                          // On long press end, close the detail screen
+                          Navigator.of(context).pop();
+                        },
+                        child: Container(
+                          margin: EdgeInsets.symmetric(
+                              vertical: 4, horizontal: 12),
+                          decoration: BoxDecoration(
+                            borderRadius:
+                            BorderRadius.circular(10),
+                            color: Colors.white,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey
+                                    .withOpacity(0.5),
+                                spreadRadius: 3,
+                                blurRadius: 5,
+                                offset: const Offset(0, 3),
                               ),
                             ],
                           ),
-                        )
-                      : apiData.isEmpty
-                          ? Container(
-                              alignment: Alignment.center,
-                              child: Image.asset(
-                                'assets/images/nodata.png',
-                                height: 150,
-                                width: 150,
-                              ),
-                            )
-                          : filteredData.isEmpty && !showNoResults
-                              ? ListView.builder(
-                                  itemCount: sortedData.length,
-                                  itemBuilder: (context, index) {
-                                    final data = sortedData[index];
-                                    final email = data['email'] ?? '';
-                                    final name = data['name'] ?? '';
-                                    final phone = data['phone'] ?? '';
-                                    String status = data['contact'] ?? '';
+                          child: ListTile(
+                            leading: Builder(
+                              builder: (context) {
+                                // Determine the GIF path based on the source
+                                String source =
+                                    data['source'] ?? '';
+                                String gifPath;
 
-                                    // Determine which date field is present
-                                    final date = data.containsKey('added_date')
-                                        ? data['added_date']
-                                        : data.containsKey('created_date')
-                                            ? data['created_date']
-                                            : '';
+                                if (source == 'lead') {
+                                  gifPath =
+                                  'assets/images/email.gif'; // Path for lead GIF
+                                } else {
+                                  gifPath =
+                                  'assets/images/chatleads.gif'; // Path for chat leads GIF
+                                }
+                                // else {
+                                // //   gifPath = 'assets/images/default.gif'; // Default GIF if source is unknown
+                                // // }
 
-                                    // Parse and format the date if it's present
-                                    DateTime? parsedDate;
-                                    if (date.isNotEmpty) {
-                                      try {
-                                        parsedDate = DateTime.parse(date);
-                                      } catch (e) {
-                                        parsedDate =
-                                            null; // Handle parsing errors
-                                      }
-                                    }
-
-                                    final formattedDate = parsedDate != null
-                                        ? DateFormat('dd/MM/yy')
-                                            .format(parsedDate)
-                                        : '';
-
-                                    return Container(
-                                      margin: EdgeInsets.symmetric(
-                                          vertical: 8, horizontal: 16),
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(10),
-                                        color: Colors.white,
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.grey.withOpacity(0.5),
-                                            spreadRadius: 3,
-                                            blurRadius: 5,
-                                            offset: const Offset(0, 3),
+                                return Image.asset(
+                                  gifPath,
+                                  width: 40,
+                                  height: 40,
+                                  fit: BoxFit.cover,
+                                );
+                              },
+                            ),
+                            title: Row(
+                              mainAxisAlignment:
+                              MainAxisAlignment
+                                  .spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                    CrossAxisAlignment
+                                        .start,
+                                    children: [
+                                      Text(
+                                        name,
+                                        style: TextStyle(
+                                          fontFamily:
+                                          'Poppins',
+                                          fontWeight: status ==
+                                              'uncontacted'
+                                              ? FontWeight
+                                              .w600
+                                              : FontWeight
+                                              .normal,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        height: 10,
+                                      ),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            phone,
+                                            style: TextStyle(
+                                              fontFamily:
+                                              'Poppins',
+                                              fontSize: 14,
+                                              fontWeight: status ==
+                                                  'uncontacted'
+                                                  ? FontWeight
+                                                  .w600
+                                                  : FontWeight
+                                                  .normal,
+                                            ),
                                           ),
+                                          // Icon(Icons.info,color: Colors.blue.shade900,),
                                         ],
                                       ),
-                                      child: ListTile(
-                                        title: Row(
-                                          children: [
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  // Container(
-                                                  //   width: 110,
-                                                  //   height: 25,
-                                                  //   decoration: BoxDecoration(
-                                                  //       color: status=='uncontacted'?Colors.red:Colors.blue.shade900,
-                                                  //       borderRadius: BorderRadius.circular(10)),
-                                                  //   child: Center(
-                                                  //     child: Text(
-                                                  //       status,
-                                                  //       style: TextStyle(color: Colors.white),
-                                                  //     ),
-                                                  //   ),
-                                                  // ),
-                                                  // SizedBox(height: 2,),
-                                                  Row(
-                                                    children: [
-                                                      Text(
-                                                        name,
-                                                        style: TextStyle(
-                                                          fontFamily: 'Poppins',
-                                                          fontWeight: status ==
-                                                                  'uncontacted'
-                                                              ? FontWeight.bold
-                                                              : FontWeight
-                                                                  .normal,
-                                                          fontSize: 16,
-                                                        ),
-                                                      ),
-                                                      Text(
-                                                        formattedDate,
-                                                        style: TextStyle(
-                                                          fontSize: 12,
-                                                          fontStyle:
-                                                              FontStyle.italic,
-                                                          fontFamily: 'Poppins',
-                                                          color: Colors.grey,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  Column(
-                                                    children: [
-                                                      Text(
-                                                        phone,
-                                                        style: TextStyle(
-                                                          fontFamily: 'Poppins',
-                                                          fontSize: 14,
-                                                          fontWeight: status ==
-                                                                  'uncontacted'
-                                                              ? FontWeight.bold
-                                                              : FontWeight
-                                                                  .normal,
-                                                        ),
-                                                      ),
-                                                      IconButton(
-                                                          onPressed: () {
-                                                            launchDialer(phone);
-                                                          },
-                                                          icon: Icon(
-                                                            Icons.phone,
-                                                            color: Colors.green,
-                                                          )),
-                                                      ElevatedButton(
-                                                          style: ElevatedButton
-                                                              .styleFrom(
-                                                                  backgroundColor:
-                                                                      Colors
-                                                                          .blue
-                                                                          .shade900),
-                                                          onPressed: () {
-                                                            navigateToKeywordDetailScreen(
-                                                                index);
-                                                          },
-                                                          child: Text(
-                                                            'Details',
-                                                            style: TextStyle(
-                                                                color: Colors
-                                                                    .white),
-                                                          ))
-                                                    ],
-                                                  ),
-                                                ],
-                                              ),
-                                            )
-                                          ],
-                                        ),
-                                        onTap: () {
-                                          navigateToKeywordDetailScreen(index);
-                                        },
+                                    ],
+                                  ),
+                                ),
+                                Column(
+                                  children: [
+                                    Text(
+                                      formattedDate,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        // fontStyle: FontStyle.italic,
+                                        fontFamily: 'Poppins',
+                                        color: Colors.grey,
                                       ),
-                                    );
-                                  },
-                                )
-                              : filteredData.isEmpty && showNoResults
-                                  ? Container(
-                                      alignment: Alignment.center,
-                                      child: Text(
-                                        'No search data found',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    )
-                                  : ListView.builder(
-                                      itemCount: filteredData.length,
-                                      itemBuilder: (context, index) {
-                                        final data = filteredData[index];
-                                        // Combine both date fields, prioritizing 'added_date' if both are present
-                                        final date = data['added_date'] ??
-                                            data['created_date'] ??
-                                            '';
-                                        final email = data['email'] ?? '';
-                                        final name = data['name'] ?? '';
-                                        final phone = data['phone'] ?? '';
-                                        String status = data['contact'] ?? '';
-                                        final formattedDate =
-                                            calculateTimeDifference(date);
-
-                                        return GestureDetector(
-                                          onLongPress: () {
+                                    ),
+                                    Row(
+                                      mainAxisAlignment:
+                                      MainAxisAlignment
+                                          .spaceBetween,
+                                      children: [
+                                        SizedBox(width: 4,),
+                                        GestureDetector(
+                                          child: Icon(
+                                            Icons.info,
+                                            color: Colors.blue
+                                                .shade900,
+                                          ),
+                                          onTap: () {
                                             navigateToKeywordDetailScreen(
                                                 index);
                                           },
-                                          onLongPressEnd: (details) {
-                                            // On long press end, close the detail screen
-                                            Navigator.of(context).pop();
-                                          },
-                                          child: Container(
-                                            margin: EdgeInsets.symmetric(
-                                                vertical: 4, horizontal: 12),
-                                            decoration: BoxDecoration(
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
-                                              color: Colors.white,
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: Colors.grey
-                                                      .withOpacity(0.5),
-                                                  spreadRadius: 3,
-                                                  blurRadius: 5,
-                                                  offset: const Offset(0, 3),
-                                                ),
-                                              ],
-                                            ),
-                                            child: ListTile(
-                                              leading: Builder(
-                                                builder: (context) {
-                                                  // Determine the GIF path based on the source
-                                                  String source =
-                                                      data['source'] ?? '';
-                                                  String gifPath;
+                                        ),
+                                        SizedBox(width:12),
+                                        IconButton(
+                                            onPressed: () {
+                                              launchDialer(
+                                                  phone);
+                                            },
+                                            icon: Icon(
+                                              Icons.phone,
+                                              color: Colors
+                                                  .green,
+                                            )),
 
-                                                  if (source == 'lead') {
-                                                    gifPath =
-                                                        'assets/images/email.gif'; // Path for lead GIF
-                                                  } else {
-                                                    gifPath =
-                                                        'assets/images/chatleads.gif'; // Path for chat leads GIF
-                                                  }
-                                                  // else {
-                                                  // //   gifPath = 'assets/images/default.gif'; // Default GIF if source is unknown
-                                                  // // }
-
-                                                  return Image.asset(
-                                                    gifPath,
-                                                    width: 40,
-                                                    height: 40,
-                                                    fit: BoxFit.cover,
-                                                  );
-                                                },
-                                              ),
-                                              title: Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceBetween,
-                                                children: [
-                                                  Expanded(
-                                                    child: Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        Text(
-                                                          name,
-                                                          style: TextStyle(
-                                                            fontFamily:
-                                                                'Poppins',
-                                                            fontWeight: status ==
-                                                                    'uncontacted'
-                                                                ? FontWeight
-                                                                    .w600
-                                                                : FontWeight
-                                                                    .normal,
-                                                            fontSize: 16,
-                                                          ),
-                                                        ),
-                                                        SizedBox(
-                                                          height: 10,
-                                                        ),
-                                                        Row(
-                                                          children: [
-                                                            Text(
-                                                              phone,
-                                                              style: TextStyle(
-                                                                fontFamily:
-                                                                    'Poppins',
-                                                                fontSize: 14,
-                                                                fontWeight: status ==
-                                                                        'uncontacted'
-                                                                    ? FontWeight
-                                                                        .w600
-                                                                    : FontWeight
-                                                                        .normal,
-                                                              ),
-                                                            ),
-                                                            // Icon(Icons.info,color: Colors.blue.shade900,),
-                                                          ],
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                  Column(
-                                                    children: [
-                                                      Text(
-                                                        formattedDate,
-                                                        style: TextStyle(
-                                                          fontSize: 12,
-                                                          // fontStyle: FontStyle.italic,
-                                                          fontFamily: 'Poppins',
-                                                          color: Colors.grey,
-                                                        ),
-                                                      ),
-                                                      Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .spaceBetween,
-                                                        children: [
-                                                          SizedBox(width: 4,),
-                                                          GestureDetector(
-                                                            child: Image.asset(
-                                                              'assets/images/user_info.png',  // Path to your PNG image
-                                                              width: 24.0,  // Adjust the size as needed
-                                                              height: 24.0,
-                                                            ),
-                                                            onTap: () {
-                                                              navigateToKeywordDetailScreen(index);
-                                                            },
-                                                          ),
-
-                                                          SizedBox(width:12),
-                                                          IconButton(
-                                                              onPressed: () {
-                                                                launchDialer(
-                                                                    phone);
-                                                              },
-                                                              icon: Icon(
-                                                                Icons.phone,
-                                                                color: Colors
-                                                                    .green,
-                                                              )),
-
-                                                        ],
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ],
-                                              ),
-                                              // onTap: () {
-                                              //   navigateToKeywordDetailScreen(
-                                              //       index);
-                                              // },
-                                            ),
-                                          ),
-                                        );
-                                      },
+                                      ],
                                     ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            // onTap: () {
+                            //   navigateToKeywordDetailScreen(
+                            //       index);
+                            // },
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ],
             ),
@@ -1674,7 +1689,7 @@ class _DetailScreenState extends State<DetailScreen>
   void _toggleContainer() {
     setState(() {
       isVisible =
-          !isVisible; // Toggle the visibility: true -> false, false -> true
+      !isVisible; // Toggle the visibility: true -> false, false -> true
     });
   }
 
@@ -1688,7 +1703,7 @@ class _DetailScreenState extends State<DetailScreen>
 
     // Determine the new status
     String newStatus =
-        (currentStatus == 'uncontacted') ? 'contacted' : 'uncontacted';
+    (currentStatus == 'uncontacted') ? 'contacted' : 'uncontacted';
 
     // Prepare the body data
     Map<String, String> body = {
@@ -1849,9 +1864,9 @@ class _DetailScreenState extends State<DetailScreen>
                                   onGroupCreated: () async {
                                     _groups = await loadGroups();
                                     Future.delayed(Duration(milliseconds: 150),
-                                        () {
-                                      _groupsBottomSheet(context);
-                                    });
+                                            () {
+                                          _groupsBottomSheet(context);
+                                        });
 
                                     // Callback function, not directly used here but can be used if needed},
                                   },
@@ -2039,7 +2054,7 @@ class _DetailScreenState extends State<DetailScreen>
     print("Printed group names: $groupsString");
     // Convert the JSON string into a list of maps
     final List<Map<String, dynamic>> allGroups =
-        List<Map<String, dynamic>>.from(jsonDecode(groupsString));
+    List<Map<String, dynamic>>.from(jsonDecode(groupsString));
     // Extract the user name
     final userName = widget
         .data?['name']; // Ensure 'name' is the correct identifier for the user
@@ -2047,9 +2062,9 @@ class _DetailScreenState extends State<DetailScreen>
     // Filter groups where the user is present
     final List<String> userGroupNames = allGroups
         .where((group) =>
-            group['users'] != null &&
-            (group['users'] as List<dynamic>)
-                .any((user) => user['name'] == userName))
+    group['users'] != null &&
+        (group['users'] as List<dynamic>)
+            .any((user) => user['name'] == userName))
         .map((group) => group['name'] as String)
         .toList();
 
@@ -2093,7 +2108,7 @@ class _DetailScreenState extends State<DetailScreen>
 
       // Check if the user is already in the group's users list
       bool userExists =
-          updatedGroup['users'].any((user) => user['name'] == userName);
+      updatedGroup['users'].any((user) => user['name'] == userName);
       if (!userExists) {
         updatedGroup['users'].add({
           'name': userName,
@@ -2131,7 +2146,7 @@ class _DetailScreenState extends State<DetailScreen>
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content:
-                Text('${widget.data?['name']} is already in ${group['name']}'),
+            Text('${widget.data?['name']} is already in ${group['name']}'),
             backgroundColor: Colors.blue.shade900));
       }
     } else {
@@ -2300,7 +2315,7 @@ class _DetailScreenState extends State<DetailScreen>
                               style: TextStyle(color: Colors.blue.shade900),
                             ),
                             onTap:
-                                _showCustomDateSelector, // Handle custom date selection
+                            _showCustomDateSelector, // Handle custom date selection
                           ),
                         ],
                       ),
@@ -2475,107 +2490,107 @@ class _DetailScreenState extends State<DetailScreen>
 
   Future<void> _sendWhatsAppMessage(BuildContext context, String message, String recipient) async {bool fileSelected = _filePath != null && _filePath!.isNotEmpty;
 
-    // If a file is selected, share the file along with the message
-    if (fileSelected) {
-      try {
-        // Convert the file path to an XFile
-        XFile xFile = XFile(_filePath!);
+  // If a file is selected, share the file along with the message
+  if (fileSelected) {
+    try {
+      // Convert the file path to an XFile
+      XFile xFile = XFile(_filePath!);
 
-        // Use Share.shareXFiles to share the file along with the message
-        await Share.shareXFiles(
-          [xFile], // Pass the XFile as a list
-          text: message.isNotEmpty
-              ? message
-              : null, // Share the message if it's not empty
-        );
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('File and message shared successfully!')),
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to share file and message: $e')),
-        );
-      }
-    }
-
-    // Send only the message via WhatsApp if it's present
-    if (message.isNotEmpty) {
-      final Uri whatsappUri = Uri(
-        scheme: 'https',
-        host: 'wa.me',
-        path: recipient,
-        queryParameters: {
-          'text': message, // The message to send
-        },
+      // Use Share.shareXFiles to share the file along with the message
+      await Share.shareXFiles(
+        [xFile], // Pass the XFile as a list
+        text: message.isNotEmpty
+            ? message
+            : null, // Share the message if it's not empty
       );
 
-      try {
-        if (await canLaunchUrl(whatsappUri)) {
-          await launchUrl(whatsappUri);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Message sent through WhatsApp!')),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to send message via WhatsApp.')),
-          );
-          throw 'Could not launch WhatsApp';
-        }
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to send message: $e')),
-        );
-      }
-    }
-
-    // Handle the case where neither file nor message is present
-    if (!fileSelected && message.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No file or message to send.')),
+        SnackBar(content: Text('File and message shared successfully!')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to share file and message: $e')),
       );
     }
   }
 
-  Future<void> _sendEmail(BuildContext context, String subject, String message,
-      String recipient) async {if (_filePath != null && _filePath!.isNotEmpty) {
-      // Attach the file and send email
-      try {
-        await Share.shareXFiles(
-          [XFile(_filePath!)], // File path as a list of XFile
-          subject: subject,
-          text: message,
-        );
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('File and message shared via Email!')),
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Failed to share file and message via Email: $e')),
-        );
-        print('Error: $e');
-      }
-    } else {
-      // If no file is selected, send only the email with subject and message
-      final Uri emailUri = Uri(
-        scheme: 'mailto',
-        path: widget.data?['email'],
-        query: Uri.encodeFull('subject=$subject&body=$message'),
-      );
+  // Send only the message via WhatsApp if it's present
+  if (message.isNotEmpty) {
+    final Uri whatsappUri = Uri(
+      scheme: 'https',
+      host: 'wa.me',
+      path: recipient,
+      queryParameters: {
+        'text': message, // The message to send
+      },
+    );
 
-      if (await canLaunchUrl(emailUri)) {
-        await launchUrl(emailUri);
+    try {
+      if (await canLaunchUrl(whatsappUri)) {
+        await launchUrl(whatsappUri);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Message sent through Email!')),
+          SnackBar(content: Text('Message sent through WhatsApp!')),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to open email client.')),
+          SnackBar(content: Text('Failed to send message via WhatsApp.')),
         );
-        throw 'Could not launch email client';
+        throw 'Could not launch WhatsApp';
       }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to send message: $e')),
+      );
     }
+  }
+
+  // Handle the case where neither file nor message is present
+  if (!fileSelected && message.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('No file or message to send.')),
+    );
+  }
+  }
+
+  Future<void> _sendEmail(BuildContext context, String subject, String message,
+      String recipient) async {if (_filePath != null && _filePath!.isNotEmpty) {
+    // Attach the file and send email
+    try {
+      await Share.shareXFiles(
+        [XFile(_filePath!)], // File path as a list of XFile
+        subject: subject,
+        text: message,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('File and message shared via Email!')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('Failed to share file and message via Email: $e')),
+      );
+      print('Error: $e');
+    }
+  } else {
+    // If no file is selected, send only the email with subject and message
+    final Uri emailUri = Uri(
+      scheme: 'mailto',
+      path: widget.data?['email'],
+      query: Uri.encodeFull('subject=$subject&body=$message'),
+    );
+
+    if (await canLaunchUrl(emailUri)) {
+      await launchUrl(emailUri);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Message sent through Email!')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to open email client.')),
+      );
+      throw 'Could not launch email client';
+    }
+  }
   }
 
   @override
@@ -2649,7 +2664,7 @@ class _DetailScreenState extends State<DetailScreen>
                           style: const TextStyle(
                               fontSize: 20,
                               fontFamily:
-                                  'Poppins', // Reference the family name here
+                              'Poppins', // Reference the family name here
                               fontWeight: FontWeight.bold),
                         ),
                         GestureDetector(
@@ -2673,37 +2688,37 @@ class _DetailScreenState extends State<DetailScreen>
                         },
                         child: isVisible
                             ? Container(
-                                height: 40,
-                                width: MediaQuery.of(context).size.width,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(15),
-                                  color: Colors.blue.shade900,
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8.0),
-                                  child: Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          widget.data?['contact'].toUpperCase(),
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            fontFamily: 'Poppins',
-                                          ),
-                                        ),
-                                        Icon(
-                                          Icons.arrow_downward_sharp,
-                                          color: Colors.white,
-                                        )
-                                      ],
+                            height: 40,
+                            width: MediaQuery.of(context).size.width,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(15),
+                              color: Colors.blue.shade900,
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8.0),
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: Row(
+                                  mainAxisAlignment:
+                                  MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      widget.data?['contact'].toUpperCase(),
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: 'Poppins',
+                                      ),
                                     ),
-                                  ),
-                                ))
+                                    Icon(
+                                      Icons.arrow_downward_sharp,
+                                      color: Colors.white,
+                                    )
+                                  ],
+                                ),
+                              ),
+                            ))
                             : Container()),
                     const SizedBox(height: 10),
                     GestureDetector(
@@ -2740,35 +2755,35 @@ class _DetailScreenState extends State<DetailScreen>
                             const SizedBox(width: 10),
                             _userGroupNames.isNotEmpty
                                 ? Expanded(
-                                    child: SingleChildScrollView(
-                                      scrollDirection: Axis.horizontal,
-                                      child: Row(
-                                        children:
-                                            _userGroupNames.map((groupName) {
-                                          return Container(
-                                            margin: EdgeInsets.symmetric(
-                                                horizontal: 4.0),
-                                            height: 30,
-                                            width: 60,
-                                            decoration: BoxDecoration(
-                                              color: Colors.blue.shade900,
-                                              borderRadius:
-                                                  BorderRadius.circular(15),
-                                            ),
-                                            child: Center(
-                                              child: Text(
-                                                '$groupName',
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontFamily: 'Poppins',
-                                                ),
-                                              ),
-                                            ),
-                                          );
-                                        }).toList(),
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Row(
+                                  children:
+                                  _userGroupNames.map((groupName) {
+                                    return Container(
+                                      margin: EdgeInsets.symmetric(
+                                          horizontal: 4.0),
+                                      height: 30,
+                                      width: 60,
+                                      decoration: BoxDecoration(
+                                        color: Colors.blue.shade900,
+                                        borderRadius:
+                                        BorderRadius.circular(15),
                                       ),
-                                    ),
-                                  )
+                                      child: Center(
+                                        child: Text(
+                                          '$groupName',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontFamily: 'Poppins',
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                            )
                                 : Container(),
                           ],
                         ),
@@ -2787,7 +2802,7 @@ class _DetailScreenState extends State<DetailScreen>
                           username,
                           uniqueId,
                           seoId,
-                          (selectedDate) {
+                              (selectedDate) {
                             setState(() {
                               _selectedFollowUpDate =
                                   selectedDate; // Update the state with the selected date
@@ -3207,9 +3222,9 @@ class _DetailScreenState extends State<DetailScreen>
                             ),
                             TextField(
                               controller:
-                                  _titleController, // A TextEditingController to manage the input
+                              _titleController, // A TextEditingController to manage the input
                               maxLines:
-                                  null, // Allows the message to be multi-line
+                              null, // Allows the message to be multi-line
                               decoration: InputDecoration(
                                 hintText: "Enter title",
                                 hintStyle: TextStyle(
@@ -3239,9 +3254,9 @@ class _DetailScreenState extends State<DetailScreen>
                             ),
                             TextField(
                               controller:
-                                  _messageController, // A TextEditingController to manage the input
+                              _messageController, // A TextEditingController to manage the input
                               maxLines:
-                                  null, // Allows the message to be multi-line
+                              null, // Allows the message to be multi-line
                               decoration: InputDecoration(
                                 hintText: "Write a message...",
                                 hintStyle: TextStyle(
@@ -3341,7 +3356,7 @@ class _DetailScreenState extends State<DetailScreen>
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content:
-                            Text('WhatsApp is not installed on your device.'),
+                        Text('WhatsApp is not installed on your device.'),
                       ),
                     );
                   }
@@ -3396,13 +3411,13 @@ class CircularDashboardCard extends StatelessWidget {
             SizedBox(height: 1),
             count is int
                 ? Text(
-                    count.toString(),
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  )
+              count.toString(),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            )
                 : count,
           ],
         ),

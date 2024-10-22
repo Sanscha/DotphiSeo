@@ -1,7 +1,9 @@
 import 'package:dotphi_seo_app/pages/home_screen.dart';
 import 'package:dotphi_seo_app/pages/livechat.dart';
+import 'package:dotphi_seo_app/pages/paid_leads_screen.dart';
 import 'package:dotphi_seo_app/pages/profile_screen.dart';
 import 'package:dotphi_seo_app/pages/seo_checker.dart';
+import 'package:eva_icons_flutter/eva_icons_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -51,6 +53,8 @@ class _NavBarScreenState extends State<NavBarScreen> {
       // TabularScreen(user: widget.user, selectedProjectCode: widget.selectedProjectCode,
       //   projectUrl: widget.projectUrl,),
       ApiScreen(user: widget.user, selectedProjectCode: widget.selectedProjectCode,
+        projectUrl: widget.projectUrl,),
+      PaidLeadsScreen(user: widget.user, selectedProjectCode: widget.selectedProjectCode,
         projectUrl: widget.projectUrl,),
       // LivechatScreenn(user: widget.user, projectUrl: widget.projectUrl, selectedProjectCode: widget.selectedProjectCode,),
       SignInScreen(),
@@ -103,65 +107,80 @@ class _NavBarScreenState extends State<NavBarScreen> {
         decoration: BoxDecoration(
           image: DecorationImage(
             image: AssetImage('assets/images/conbg.jpg'), // Replace with your image path
-            fit: BoxFit.cover, // You can adjust this to your needs
+            fit: BoxFit.cover,
           ),
         ),
         child: Padding(
           padding: const EdgeInsets.all(0),
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 10),
               child: GNav(
                 backgroundColor: Colors.white,
                 color: Colors.blue.shade900,
-                gap: 15,
+                gap: 8, // Reduced gap between icons
                 activeColor: Colors.white,
-                tabBackgroundColor:Colors.blue.shade900,
-                padding: const EdgeInsets.all(10),
+                tabBackgroundColor: Colors.blue.shade900,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), // Reduced padding
                 tabs: const [
                   GButton(
                     icon: Icons.home,
                     text: 'Home',
+                    iconSize: 22, // Smaller icon size
                     textStyle: TextStyle(
                       fontFamily: 'Poppins',
-                        color: Colors.white// Change to your desired font family
-                      // Change font weight if needed
+                      fontSize: 12, // Smaller text size
+                      color: Colors.white,
                     ),
                   ),
                   GButton(
                     icon: Icons.leaderboard,
                     text: 'Leads',
+                    iconSize: 22,
                     textStyle: TextStyle(
                       fontFamily: 'Poppins',
-                        color: Colors.white// Change to your desired font family
-                      // Change font weight if needed
+                      fontSize: 12,
+                      color: Colors.white,
+                    ),
+                  ),
+                  GButton(
+                    icon: Icons.attach_money,
+                    text: 'Paid-Leads',
+                    iconSize: 22,
+                    textStyle: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 12,
+                      color: Colors.white,
                     ),
                   ),
                   GButton(
                     icon: Icons.screen_search_desktop_outlined,
                     text: 'Search-Console',
+                    iconSize: 22,
                     textStyle: TextStyle(
                       fontFamily: 'Poppins',
-                        color: Colors.white// Change to your desired font family
-                      // Change font weight if needed
+                      fontSize: 12,
+                      color: Colors.white,
                     ),
                   ),
                   GButton(
                     icon: Icons.key,
                     text: 'Keywords',
+                    iconSize: 22,
                     textStyle: TextStyle(
                       fontFamily: 'Poppins',
-                      color: Colors.white// Change to your desired font family
-                      // Change font weight if needed
+                      fontSize: 12,
+                      color: Colors.white,
                     ),
                   ),
                   GButton(
                     icon: Icons.person,
                     text: 'Profile',
+                    iconSize: 22,
                     textStyle: TextStyle(
                       fontFamily: 'Poppins',
-                        color: Colors.white// Change to your desired font family
-                      // Change font weight if needed
+                      fontSize: 12,
+                      color: Colors.white,
                     ),
                   ),
                 ],
@@ -173,11 +192,16 @@ class _NavBarScreenState extends State<NavBarScreen> {
                       index,
                       duration: Duration(milliseconds: 300),
                       curve: Curves.easeInOut,
-                    );});},),
+                    );
+                  });
+                },
+              ),
             ),
           ),
         ),
-      ),
+      )
+
+
     );
   }
 }

@@ -57,7 +57,8 @@ class _HomeScreennState extends State<HomeScreenn> {
       setState(() {
         _projectUniqueCodes = codes;
         _loadSelectedProjectCode();
-        _loadProjectUrl();});
+        _loadProjectUrl();
+       });
     });
     fetchNotifications();
     startListeningForUpdates();

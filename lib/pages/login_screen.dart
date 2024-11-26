@@ -1,9 +1,15 @@
+import 'package:dotphi_seo_app/pages/demo_screen.dart';
+import 'package:dotphi_seo_app/pages/phoneverification_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
+import '../model/login_model.dart';
 import '../notification_services/notification_services.dart';
 import 'api_service.dart';
-import '../model/login_model.dart';
+import 'package:dotphi_seo_app/model/login_model.dart' as custom;
 import 'forgot_password.dart';
+import 'googlelogin_screen.dart';
 import 'navbar.dart';
 import 'flutter_toast.dart'; // Import the CustomToast widget
 
@@ -31,6 +37,12 @@ class _LoginScreennState extends State<LoginScreenn> {
       print('device token');
       print(value);
     });
+  }
+
+  Future<UserCredential> signInWithFacebook() async{
+    final LoginResult loginResult=await FacebookAuth.instance.login();
+    final AuthCredential facebookAuthCredential=FacebookAuthProvider.credential('${loginResult.accessToken?.tokenString}');
+    return FirebaseAuth.instance.signInWithCredential(facebookAuthCredential);
   }
 
   Future<void> login(String email, String password) async {
@@ -69,10 +81,10 @@ class _LoginScreennState extends State<LoginScreenn> {
       return;
     }
 
-    ApiResponse<User> apiResponse = await ApiService.login(email, password, fcmToken);
+    ApiResponse<custom.User> apiResponse = await ApiService.login(email, password, fcmToken);
 
     if (apiResponse.status == Status.SUCCESS) {
-      User user = apiResponse.data!;
+      custom.User user = apiResponse.data!;
       await UserStorage.storeUser(user); // Store user data
 
       CustomToast.show('Login successful!', backgroundColor: Colors.green);
@@ -101,6 +113,7 @@ class _LoginScreennState extends State<LoginScreenn> {
       isLoading = false;
     });
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -269,6 +282,95 @@ class _LoginScreennState extends State<LoginScreenn> {
                               ),
                             ),
                           ),
+                        ),
+                        SizedBox(height:22),
+                        Text("Login as Guest",
+                            style: TextStyle(
+                              fontSize: 14, fontFamily: 'Poppins',
+                             )),
+                        SizedBox(height: 10,),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                        Container(
+                        child: ElevatedButton(
+                        onPressed: () async {
+                  try {
+                  // Call the signInWithFacebook function
+                  final userCredential = await signInWithFacebook();
+
+                  // Navigate to another page upon successful login
+                  if (userCredential.user != null) {
+                    CustomToast.show('Login successful', backgroundColor: Colors.green);
+                  Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                  builder: (context) => DemoScreen(), // Replace `NextPage` with your desired screen
+                  ),
+                  );
+                  }
+                  } catch (e) {
+                  // Handle login error (optional)
+                  print('Error during Facebook login: $e');
+                      CustomToast.show('Facebook login failed. Please try again.', backgroundColor: Colors.red);
+                  }
+                  },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding: EdgeInsets.symmetric(vertical: 10),
+                    ),
+                    child: Row(
+                      children: [
+                        Image.asset(
+                          'assets/images/facebook.png',
+                          width: 30.0, // Set the width of the image
+                          height: 30.0, // Set the height of the image
+                          fit: BoxFit.cover,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                            Container(
+                              child: ElevatedButton(onPressed: (){
+                                Navigator.push(context, MaterialPageRoute(builder: (context)=>GoogleloginScreen()));
+                              },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    padding: EdgeInsets.symmetric(vertical: 10),
+                                  ),
+                                  child: Row(children: [
+                                    Image.asset('assets/images/google.png',
+                                      width: 30.0,  // Set the width of the image
+                                      height: 30.0, // Set the height of the image
+                                      fit: BoxFit.cover,),
+                                  ],)),
+                            ),
+                            Container(
+                              child: ElevatedButton(onPressed: (){
+                                Navigator.push(context, MaterialPageRoute(builder: (context)=>PhoneverificationScreen()));
+                              },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    padding: EdgeInsets.symmetric(vertical: 10),
+                                  ),
+                                  child: Row(children: [
+                                    Image.asset('assets/images/phone.png',
+                                      width: 30.0,  // Set the width of the image
+                                      height: 30.0, // Set the height of the image
+                                      fit: BoxFit.cover,),
+                                  ],)),
+                            ),
+                          ],
                         ),
                       ],
                     ),

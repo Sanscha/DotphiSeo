@@ -398,29 +398,22 @@ class _KeywordScreenState extends State<KeywordScreen> {
               ),
             ),
           ],
-
-          title:  Row(
-            children: 'Keywords'.split('').map((letter) {
-              int fontSize = 30 - 'Keywords'.indexOf(letter) * 2;
-              return Padding(
-                padding: EdgeInsets.symmetric(horizontal: 0.0),
-                child: Text(
-                  letter,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: fontSize.toDouble(),
-                    color: Colors.blue.shade900,
-                    shadows: [
-                      Shadow(
-                        offset: Offset(1.0, 1.0),
-                        blurRadius: 2.0,
-                        color: Colors.black.withOpacity(0.5),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
+          leading: Padding(
+            padding: const EdgeInsets.only(left: 8.0),
+            child: Image.asset('assets/images/keyword.png',
+            height: 15,width: 15,),
+          ),
+          title:  FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              'Keywords',
+              style: TextStyle(
+                fontSize: 20,  // Reduced font size to fit better
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.bold,
+                color: Colors.blue[900],
+              ),
+            ),
           )
 
 
@@ -769,28 +762,16 @@ class _KeywordDetailScreenState extends State<KeywordDetailScreen> {
           ),
         ),
 
-        title:  Row(
-          children: 'Keywords'.split('').map((letter) {
-            int fontSize = 30 - 'Keywords'.indexOf(letter) * 2;
-            return Padding(
-              padding: EdgeInsets.symmetric(horizontal: 2.0),
-              child: Text(
-                letter,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: fontSize.toDouble(),
-                  color: Colors.blue.shade900,
-                  shadows: [
-                    Shadow(
-                      offset: Offset(1.0, 1.0),
-                      blurRadius: 2.0,
-                      color: Colors.black.withOpacity(0.5),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }).toList(),
+        title:  FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            'Keywords',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 30, // You can adjust this font size as needed
+              color: Colors.blue.shade900, // Adjust the color as needed
+            ),
+          ),
         )
 
       ),

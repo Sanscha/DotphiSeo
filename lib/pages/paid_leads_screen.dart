@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:contacts_service/contacts_service.dart';
 import 'package:dotphi_seo_app/pages/groups_screen.dart';
+import 'package:dotphi_seo_app/pages/todaysfollowup_screen.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -16,6 +17,9 @@ import '../model/login_model.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
 
+import '../notification_services/notification_handler.dart';
+import 'followup_screen.dart';
+import 'leads_screen.dart';
 import 'notification_screen.dart';
 
 class PaidLeadsScreen extends StatefulWidget {
@@ -35,7 +39,7 @@ class PaidLeadsScreen extends StatefulWidget {
 
 class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
   List<Map<String, dynamic>> apiData = [];
-  List<Map<String, dynamic>> filteredData = [];
+  // List<Map<String, dynamic>> filteredData = [];
   List<Map<String, dynamic>> sortedData = [];
   TextEditingController searchController = TextEditingController();
   bool showNoResults = false;
@@ -58,6 +62,10 @@ class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
   int totalDataInRange = 0;
   Map<String, String> _projectData = {};
   int _tillDateLeadCount = 0;
+  int totalLeadsCount = 0;
+  int todaysLeadsCount = 0;
+  int thisWeeksLeadsCount = 0;
+  int thisMonthsLeadsCount = 0;
   int _todayLeadCount = 0;
   int _weeklyLeadCount = 0;
   int _monthlyLeadCount = 0;
@@ -65,6 +73,9 @@ class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
   String? selectedProjectId;
   bool showNotificationGif = false;
   String searchKeyword = '';
+  List<dynamic> _leads = [];
+  List<dynamic> filteredData = [];
+  String? campaignId;
 
   @override
   void initState() {
@@ -95,6 +106,7 @@ class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _fetchProjectUniqueCodes();
     _fetchDataAndUpdateScreen();
   }
 
@@ -118,6 +130,11 @@ class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
     _loadProjectUrl();
   }
 
+   void didPopNext() {
+    loadPaidLeads(campaignId!);
+   }
+
+
   Future<void> fetchLeadCounts({String? projectId, String? projectCode}) async {
     // If projectId is null and projectCode is provided, map it to a projectId
     if (projectId == null && projectCode != null) {
@@ -139,12 +156,12 @@ class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
             monthlyApi: 'https://clients.dotphi.com/Api/Login/getMonthlyLeads'),
         _fetchLeadCountsFromApi(projectId,
             tillDateApi:
-            'https://clients.dotphi.com/Api/login/getCountofliveLeads',
+                'https://clients.dotphi.com/Api/login/getCountofliveLeads',
             todayApi: 'https://clients.dotphi.com/Api/login/getTodayliveLeads',
             weeklyApi:
-            'https://clients.dotphi.com/Api/login/getWeeklyliveLeads',
+                'https://clients.dotphi.com/Api/login/getWeeklyliveLeads',
             monthlyApi:
-            'https://clients.dotphi.com/Api/login/getMonthlyLiveLeads'),
+                'https://clients.dotphi.com/Api/login/getMonthlyLiveLeads'),
       ]);
 
       // Extract results from Future.wait
@@ -154,7 +171,7 @@ class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
       // Update the state with fetched counts
       setState(() {
         _tillDateLeadCount =
-        (regularCounts['tillDate']! + liveCounts['tillDate']!);
+            (regularCounts['tillDate']! + liveCounts['tillDate']!);
         _todayLeadCount = regularCounts['today']! + liveCounts['today']!;
         _weeklyLeadCount = regularCounts['weekly']! + liveCounts['weekly']!;
         _monthlyLeadCount = regularCounts['monthly']! + liveCounts['monthly']!;
@@ -170,12 +187,12 @@ class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
   }
 
   Future<Map<String, int>> _fetchLeadCountsFromApi(
-      String? projectId, {
-        required String tillDateApi,
-        required String todayApi,
-        required String weeklyApi,
-        required String monthlyApi,
-      }) async {
+    String? projectId, {
+    required String tillDateApi,
+    required String todayApi,
+    required String weeklyApi,
+    required String monthlyApi,
+  }) async {
     // Define a map to hold the results
     final Map<String, int> leadCounts = {
       'tillDate': 0,
@@ -229,26 +246,36 @@ class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
 
   String calculateTimeDifference(String entryDate) {
     try {
+      // Parse the full DateTime from the entryDate
       DateTime entryDateTime = DateTime.parse(entryDate);
-      DateTime now = DateTime.now();
-      Duration difference = now.difference(entryDateTime);
 
-      if (difference.inSeconds < 60) {
-        return 'just now';
-      } else if (difference.inMinutes == 1) {
-        return '1 minute ago';
-      } else if (difference.inMinutes < 60) {
-        return '${difference.inMinutes} minutes ago';
-      } else if (difference.inHours == 1) {
-        return '1 hour ago';
-      } else if (difference.inHours < 24) {
-        return '${difference.inHours} hours ago';
-      } else if (difference.inDays == 1) {
+      // Get today's date without time (set time to midnight)
+      DateTime now = DateTime.now();
+      DateTime nowDateOnly = DateTime(now.year, now.month, now.day);
+
+      // Get the lead's date without time (set time to midnight)
+      DateTime entryDateOnly =
+          DateTime(entryDateTime.year, entryDateTime.month, entryDateTime.day);
+
+      // Calculate the difference in days only (ignoring time)
+      int differenceInDays = nowDateOnly.difference(entryDateOnly).inDays;
+
+      // Ignore today's date in the output
+      if (differenceInDays <= 0) {
+        return 'Invalid date'; // Entry is today or in the future
+      } else if (differenceInDays == 1) {
         return '1 day ago';
-      } else if (difference.inDays <= 7) {
-        return '${difference.inDays} days ago';
+      } else if (differenceInDays < 7) {
+        return '$differenceInDays days ago';
+      } else if (differenceInDays < 30) {
+        int weeks = (differenceInDays / 7).floor();
+        return weeks == 1 ? '1 week ago' : '$weeks weeks ago';
+      } else if (differenceInDays < 365) {
+        int months = (differenceInDays / 30).floor();
+        return months == 1 ? '1 month ago' : '$months months ago';
       } else {
-        return DateFormat('dd/MM/yyyy').format(entryDateTime);
+        int years = (differenceInDays / 365).floor();
+        return years == 1 ? '1 year ago' : '$years years ago';
       }
     } catch (e) {
       // Handle the case where entryDate is not in the correct format
@@ -265,7 +292,7 @@ class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
     });
 
     final url =
-    Uri.parse('https://clients.dotphi.com/Api/Login/multiple_project');
+        Uri.parse('https://clients.dotphi.com/Api/Login/multiple_project');
     final response = await http.post(
       url,
       body: {
@@ -311,7 +338,7 @@ class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
     });
 
     final url =
-    Uri.parse('https://clients.dotphi.com/Api/Login/multiple_project');
+        Uri.parse('https://clients.dotphi.com/Api/Login/multiple_project');
     final response = await http.post(
       url,
       body: {
@@ -326,8 +353,10 @@ class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
         prefs.setString('loginResponse', response.body);
         prefs.setBool('isLoggedIn', true);
         final data = jsonData['data'] as List<dynamic>;
+        campaignId = data[0]['campaign_id'].toString();
+        await loadPaidLeads(campaignId!);
         final uniqueCodes =
-        data.map((item) => item['project_unique_code'].toString()).toList();
+            data.map((item) => item['project_unique_code'].toString()).toList();
         return uniqueCodes;
       }
     }
@@ -335,6 +364,167 @@ class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
       isLoading = false;
     });
     return [];
+  }
+
+  Future<void> loadPaidLeads(String campaignId) async {
+    final url = Uri.parse('https://clients.dotphi.com/Api/login/paid_lead');
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/x-www-form-urlencoded"},
+      body: {'unique_id': campaignId},
+    );
+
+    if (response.statusCode == 200) {
+      try {
+        // Parse the response body as JSON
+        final jsonData = json.decode(response.body);
+
+        // Check if status is success
+        if (jsonData['status'] == 'success') {
+          // Ensure 'data' is actually a List before mapping over it
+          if (jsonData['data'] is List) {
+            final data = jsonData['data'] as List<dynamic>;
+
+            // Sort leads by 'created_at' in descending order (latest first)
+            data.sort((a, b) {
+              try {
+                // Extract only the 'date' portion from the 'created_at' string (first 10 characters, YYYY-MM-DD)
+                String dateStringA = a['created_at'].substring(0, 10);
+                String dateStringB = b['created_at'].substring(0, 10);
+
+                // Parse the date strings into DateTime objects
+                DateTime dateA = DateTime.parse(dateStringA);
+                DateTime dateB = DateTime.parse(dateStringB);
+
+                // Compare the dates in descending order (latest first)
+                return dateB.compareTo(dateA);
+              } catch (e) {
+                print("Error parsing date: $e");
+                return 0; // If parsing fails, don't change the order
+              }
+            });
+
+            // Set the state to store the leads
+            setState(() {
+              _leads = data;
+              totalLeadsCount = _leads.length;
+              print(totalLeadsCount);
+              todaysLeadsCount = countLeadsForToday(_leads);
+              thisWeeksLeadsCount = countLeadsForCurrentWeek(_leads);
+              thisMonthsLeadsCount = countLeadsByCurrentMonth(_leads);
+            });
+
+            print("Paid Leads Loaded:");
+            print(_leads);
+
+            // Check if there are any leads that require follow-up today
+            checkFollowUpNotifications(_leads);
+
+          } else {
+            // If 'data' is not a list, print or handle this error case
+            print("Data is not a list: ${jsonData['data']}");
+          }
+        } else {
+          print("Failed to load paid leads: ${jsonData['message']}");
+        }
+      } catch (e) {
+        print("Error parsing response: $e");
+      }
+    } else {
+      print("Failed to load paid leads with status code: ${response.statusCode}");
+    }
+  }
+
+  void checkFollowUpNotifications(List<dynamic> leads) {
+    final today = DateTime.now();
+
+    for (var lead in leads) {
+      if (lead['followup'] != null) {
+        DateTime? followUpDate;
+
+        try {
+          // Try parsing the date using 'dd-MM-yyyy' format
+          followUpDate = DateFormat('dd-MM-yyyy').parse(lead['followup']);
+        } catch (e) {
+          try {
+            // Fallback to 'yyyy-MM-dd' format if the first attempt fails
+            followUpDate = DateFormat('yyyy-MM-dd').parse(lead['followup']);
+          } catch (e) {
+            print("Error parsing follow-up date for ${lead['full_name']}: $e");
+            continue; // Skip this lead if both formats fail
+          }
+        }
+
+        if (followUpDate != null && isSameDate(today, followUpDate)) {
+          // Show in-app notification for leads with follow-up today
+          showInAppNotification(
+            title: 'Follow-up Reminder',
+            message: 'Follow-up scheduled for today',
+              projectUniqueCode:widget.selectedProjectCode,
+              campaignId:campaignId!,
+          );
+        }
+      }
+    }
+  }
+
+
+  bool isSameDate(DateTime date1, DateTime date2) {
+    return date1.year == date2.year &&
+        date1.month == date2.month &&
+        date1.day == date2.day;
+  }
+
+  int countLeadsForToday(List<dynamic> leads) {
+    // Get today's date
+    DateTime today = DateTime.now();
+
+    return leads.where((lead) {
+      // Parse the lead 'created_at' field into a DateTime object
+      DateTime leadDate =
+          DateTime.parse(lead['created_at']); // Use the existing date string
+
+      // Compare the year, month, and day of the lead date with today's date
+      return leadDate.year == today.year &&
+          leadDate.month == today.month &&
+          leadDate.day == today.day;
+    }).length;
+  }
+
+  int countLeadsForCurrentWeek(List<dynamic> leads) {
+    // Get today's date
+    DateTime now = DateTime.now();
+
+    // Calculate the start of the week (Monday)
+    DateTime startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+
+    // Calculate the end of the week (Sunday)
+    DateTime endOfWeek = startOfWeek.add(Duration(days: 6));
+
+    return leads.where((lead) {
+      // Parse the lead 'created_at' field into a DateTime object
+      DateTime leadDate =
+          DateTime.parse(lead['created_at']); // Use the existing date string
+
+      // Check if the lead date is within the current week
+      return leadDate.isAfter(startOfWeek.subtract(Duration(days: 1))) &&
+          leadDate.isBefore(endOfWeek.add(Duration(days: 1)));
+    }).length;
+  }
+
+  int countLeadsByCurrentMonth(List<dynamic> leads) {
+    // Get the current date, month, and year
+    DateTime now = DateTime.now();
+    int currentYear = now.year;
+    int currentMonth = now.month;
+
+    return leads.where((lead) {
+      // Parse the lead 'created_at' field into a DateTime object
+      DateTime leadDate = DateTime.parse(lead['created_at']);
+
+      // Compare the lead's year and month with the current year and month
+      return leadDate.year == currentYear && leadDate.month == currentMonth;
+    }).length;
   }
 
   Future<void> _loadProjectUrl() async {
@@ -384,7 +574,7 @@ class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
       if (leadResponse.statusCode == 200) {
         final leadResponseData = jsonDecode(leadResponse.body);
         final leadData =
-        List<Map<String, dynamic>>.from(leadResponseData['data']);
+            List<Map<String, dynamic>>.from(leadResponseData['data']);
 
         setState(() {
           apiData.addAll(leadData);
@@ -403,7 +593,7 @@ class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
       if (liveChatResponse.statusCode == 200) {
         final liveChatResponseData = jsonDecode(liveChatResponse.body);
         final liveChatData =
-        List<Map<String, dynamic>>.from(liveChatResponseData['data']);
+            List<Map<String, dynamic>>.from(liveChatResponseData['data']);
 
         setState(() {
           apiData.addAll(liveChatData);
@@ -448,13 +638,13 @@ class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
         print(
             'Lead Response Data: $leadResponseData'); // Print the lead response data
         List<Map<String, dynamic>> leadData =
-        List<Map<String, dynamic>>.from(leadResponseData['data']);
+            List<Map<String, dynamic>>.from(leadResponseData['data']);
 
         // Add a source and gif_path field to each item in the lead data
         for (var item in leadData) {
           item['source'] = 'lead'; // Mark as lead
           item['gif_path'] =
-          'assets/images/email.gif'; // Set the GIF path for lead data
+              'assets/images/email.gif'; // Set the GIF path for lead data
         }
 
         combinedData.addAll(leadData);
@@ -474,13 +664,13 @@ class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
         print(
             'Live Chat Response Data: $liveChatResponseData'); // Print the live chat response data
         List<Map<String, dynamic>> liveChatData =
-        List<Map<String, dynamic>>.from(liveChatResponseData['data']);
+            List<Map<String, dynamic>>.from(liveChatResponseData['data']);
 
         // Add a source and gif_path field to each item in the live chat data
         for (var item in liveChatData) {
           item['source'] = 'livechat'; // Mark as livechat
           item['gif_path'] =
-          'assets/images/chatleads.gif'; // Set the GIF path for live chat data
+              'assets/images/chatleads.gif'; // Set the GIF path for live chat data
         }
 
         combinedData.addAll(liveChatData);
@@ -579,7 +769,7 @@ class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
           );
         },
         transitionDuration:
-        Duration(milliseconds: 600), // Duration of the transition
+            Duration(milliseconds: 600), // Duration of the transition
       ),
     );
 
@@ -606,37 +796,12 @@ class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
     setState(() {
       searchKeyword = keyword.toLowerCase();
 
-      // Handle filtering by date range
-      if (selectedRange != null) {
-        filteredData = sortedData.where((data) {
-          final dateStr = data.containsKey('created_date')
-              ? data['created_date']
-              : data['added_date'];
-          final date = DateTime.parse(dateStr);
-          final start =
-          DateTime(selectedRange!.start.year, selectedRange!.start.month);
-          final end =
-          DateTime(selectedRange!.end.year, selectedRange!.end.month + 1)
-              .subtract(Duration(days: 1));
-
-          return date.isAfter(start.subtract(Duration(days: 1))) &&
-              date.isBefore(end.add(Duration(days: 1))) &&
-              date.isAfter(selectedRange!.start.subtract(Duration(days: 1))) &&
-              date.isBefore(selectedRange!.end.add(Duration(days: 1)));
-        }).toList();
-      } else {
-        filteredData = sortedData.toList();
-      }
-
-      // Handle filtering by keyword
-      if (searchKeyword.isNotEmpty) {
-        filteredData = filteredData.where((data) {
-          final name = data['name'] ?? '';
-          final email = data['email'] ?? '';
-          return (name.toLowerCase().contains(searchKeyword) ||
-              email.toLowerCase().contains(searchKeyword));
-        }).toList();
-      }
+      // Filter leads based on the search keyword
+      filteredData = _leads.where((lead) {
+        final name = (lead['full_name'] ?? '').toLowerCase();
+        final email = (lead['email'] ?? '').toLowerCase();
+        return name.contains(searchKeyword) || email.contains(searchKeyword);
+      }).toList(); // This will keep it as List<dynamic>
 
       // Update no results state
       showNoResults = filteredData.isEmpty;
@@ -650,7 +815,7 @@ class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
 
     final Uri leadUrl = Uri.parse('https://clients.dotphi.com/Api/login/lead');
     final Uri livechatUrl =
-    Uri.parse('https://clients.dotphi.com/Api/Login/livechat');
+        Uri.parse('https://clients.dotphi.com/Api/Login/livechat');
 
     // Fetch lead data
     final leadResponse = await http.post(
@@ -683,7 +848,7 @@ class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
       print(
           'Live Chat Data: $livechatData'); // Print the received live chat data
       final livechatList =
-      List<Map<String, dynamic>>.from(livechatData['data']);
+          List<Map<String, dynamic>>.from(livechatData['data']);
       combinedData.addAll(livechatList);
     } else {
       print(
@@ -698,9 +863,9 @@ class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
       // Determine which date field to sort by
       if (combinedData.isNotEmpty) {
         final hasAddedDate =
-        combinedData.every((item) => item.containsKey('added_date'));
+            combinedData.every((item) => item.containsKey('added_date'));
         final hasCreatedDate =
-        combinedData.every((item) => item.containsKey('created_date'));
+            combinedData.every((item) => item.containsKey('created_date'));
 
         if (hasAddedDate) {
           sortedData.sort((a, b) {
@@ -745,7 +910,7 @@ class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
     // print(jsonData);
     final data = jsonData['data'] as List<dynamic>;
     final project = data.firstWhere(
-            (item) => item['project_unique_code'] == projectCode,
+        (item) => item['project_unique_code'] == projectCode,
         orElse: () => null);
     if (project != null) {
       final url = project['project_url'];
@@ -804,7 +969,7 @@ class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
                     setState(() {
                       selectedProjectCode = newValue;
                       selectedProjectId =
-                      _projectIds[newValue!]; // Update selectedProjectId
+                          _projectIds[newValue!]; // Update selectedProjectId
                     });
                     await _saveSelectedProjectCode(newValue ?? '');
                     await _fetchProjectUrl(newValue ?? '');
@@ -915,6 +1080,13 @@ class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
     }
   }
 
+  String formatDate(String dateTimeString) {
+    DateTime parsedDate = DateTime.parse(dateTimeString);
+    // Format the date as 'yyyy/MM/dd'
+    String formattedDate = DateFormat('yyyy/MM/dd').format(parsedDate);
+    return formattedDate;
+  }
+
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
@@ -923,138 +1095,81 @@ class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
       },
       child: Scaffold(
         backgroundColor: Colors.white,
-        appBar: AppBar(
-            backgroundColor: Colors.white,
-            // elevation: 5,
-            toolbarHeight: 50,
-            toolbarOpacity: 0.7,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.only(
-                bottomRight: Radius.circular(25),
-                bottomLeft: Radius.circular(25),
-              ),
+        appBar:AppBar(
+          backgroundColor: Colors.white,
+          toolbarHeight: 50,
+          toolbarOpacity: 0.7,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.only(
+              bottomRight: Radius.circular(25),
+              bottomLeft: Radius.circular(25),
             ),
-            actions: [
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Row(
+          ),
+          leading: Padding(
+            padding: const EdgeInsets.only(left: 8.0),
+            child: Image.asset(
+              'assets/images/advertisement.png',
+              width: 30,  // Adjust width and height as needed
+              height: 30,
+            ),
+          ),
+          title: Text(
+            'Paid-Leads',
+            style: TextStyle(
+              fontSize: 20,  // Reduced font size to fit better
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.bold,
+              color: Colors.blue[900],
+            ),
+          ),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => NotificationHistoryScreen(
+                        user: widget.user,
+                        projectUrl: widget.projectUrl,
+                        selectedProjectCode: widget.selectedProjectCode,
+                      ),
+                    ),
+                  );
+                },
+                child: Stack(
+                  alignment: Alignment.center,
                   children: [
-                    ElevatedButton(
-                      onPressed: showProjectPopup,
-                      child: Row(
-                        children: [
-                          Text(
-                            projectUrl != null
-                                ? '$projectUrl'
-                                : 'Select Project',
-                            style: TextStyle(fontSize: 8, color: Colors.white),
-                          ),
-                          SizedBox(
-                            width: 5,
-                          ),
-                          Image.asset(
-                            'assets/images/dl.png',
-                            height: 20,
-                            width: 20,
-                          ),
-                        ],
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        backgroundColor: Colors.blue.shade900,
-                        elevation: 3,
-                        shadowColor: Colors.blue.shade900,
-                      ),
+                    Image.asset(
+                      'assets/images/notification1.gif',
+                      width: 30,  // Adjusted width and height for better fit
+                      height: 30,
                     ),
-                    GestureDetector(
-                      onTap: () {
-                        // Navigate to the notification history screen
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => NotificationHistoryScreen(
-                              user: widget.user,
-                              projectUrl: widget.projectUrl,
-                              selectedProjectCode: widget.selectedProjectCode,
-                            ),
-                          ),
-                        );
-                      },
-                      child: Stack(
-                        children: [
-                          Image.asset(
-                            'assets/images/notification1.gif',
-                            width: 40,
-                            height: 40,
-                          ),
-                          // Positioned(
-                          //   right: 0,
-                          //   top: 0,
-                          //   child: Container(
-                          //     padding: EdgeInsets.all(2),
-                          //     decoration: BoxDecoration(
-                          //       color: Colors.red,
-                          //       borderRadius: BorderRadius.circular(8),
-                          //     ),
-                          //     constraints: BoxConstraints(
-                          //       minWidth: 16,
-                          //       minHeight: 16,
-                          //     ),
-                          //   ),
-                          // ),
-                        ],
-                      ),
-                    ),
+                    // Uncomment and adjust the badge if needed
+                    // Positioned(
+                    //   right: 0,
+                    //   top: 0,
+                    //   child: Container(
+                    //     padding: EdgeInsets.all(2),
+                    //     decoration: BoxDecoration(
+                    //       color: Colors.red,
+                    //       borderRadius: BorderRadius.circular(8),
+                    //     ),
+                    //     constraints: BoxConstraints(
+                    //       minWidth: 16,
+                    //       minHeight: 16,
+                    //     ),
+                    //   ),
+                    // ),
                   ],
                 ),
               ),
-            ],
-          title: Row(
-            children: List.generate('Paid-leads'.length, (index) {
-              // Calculate font size based on the index
-              double fontSize =
-                  30 - index * 1.0; // Adjust base size and decrement as needed
-
-              // Ensure the font size does not become too small
-              fontSize = fontSize < 12.0 ? 12.0 : fontSize; // Minimum font size
-
-              // Get the letter at the current index
-              String letter = 'Paid-leads'[index];
-
-              // Skip the font size calculation for spaces
-              if (letter.trim().isEmpty) {
-                return SizedBox(width: 4.0); // Adjust space width as needed
-              }
-
-              return Padding(
-                padding: EdgeInsets.symmetric(
-                    horizontal: 0.0), // Adjust padding if needed
-                child: Text(
-                  letter,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: fontSize,
-                    color: Colors.blue.shade900,
-                    shadows: [
-                      Shadow(
-                        offset: Offset(1.0, 1.0),
-                        blurRadius: 2.0,
-                        color: Colors.black.withOpacity(0.5),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }),
-          ),
-
-
-
-
-
+            ),
+          ],
         ),
+
+
         body: Stack(
           children: [
             Container(
@@ -1106,10 +1221,11 @@ class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
             //   ),),
             Column(
               children: [
+
                 SizedBox(height: 10),
                 Padding(
                   padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   child: Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -1132,7 +1248,8 @@ class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
                           child: TextField(
                             controller: searchController,
                             onChanged: (value) {
-                              search(value);
+                              search(
+                                  value); // Call the search function on text change
                             },
                             style: TextStyle(fontSize: 16),
                             decoration: InputDecoration(
@@ -1165,9 +1282,9 @@ class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
                 ),
                 selectedRange != null
                     ? Text(
-                  'Leads from:  ${DateFormat('dd-MM-yyyy').format(selectedRange!.start)}  to  ${DateFormat('dd-MM-yyyy').format(selectedRange!.end)}',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                )
+                        'Leads from:  ${DateFormat('dd-MM-yyyy').format(selectedRange!.start)}  to  ${DateFormat('dd-MM-yyyy').format(selectedRange!.end)}',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      )
                     : Container(),
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
@@ -1182,60 +1299,68 @@ class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
                             title: 'Total Till Date',
                             count: isLoading
                                 ? SpinKitCircle(
-                              color: Colors.white,
-                              size: 20.0,
-                            )
-                                : _tillDateLeadCount,
+                                    color: Colors.white,
+                                    size: 20.0,
+                                  )
+                                : totalLeadsCount,
                             color: Colors.blue,
                           ),
                           CircularDashboardCard(
                             title: 'Today',
                             count: isLoading
                                 ? SpinKitCircle(
-                              color: Colors.white,
-                              size: 20.0,
-                            )
-                                : _todayLeadCount,
+                                    color: Colors.white,
+                                    size: 20.0,
+                                  )
+                                : todaysLeadsCount,
                             color: Colors.green,
                           ),
                           CircularDashboardCard(
                             title: 'This week',
                             count: isLoading
                                 ? SpinKitCircle(
-                              color: Colors.white,
-                              size: 20.0,
-                            )
-                                : _weeklyLeadCount,
+                                    color: Colors.white,
+                                    size: 20.0,
+                                  )
+                                : thisWeeksLeadsCount,
                             color: Colors.orange,
                           ),
                           CircularDashboardCard(
                             title: 'This month',
                             count: isLoading
                                 ? SpinKitCircle(
-                              color: Colors.white,
-                              size: 20.0,
-                            )
-                                : _monthlyLeadCount,
+                                    color: Colors.white,
+                                    size: 20.0,
+                                  )
+                                : thisMonthsLeadsCount,
                             color: Colors.purple,
                           ),
                         ],
                       ),
                       SizedBox(height: 20),
                       CustomTabBar(
-                        tabs: ['All Leads', 'Groups'],
+                        tabs: ['All Leads','Follow-ups','Groups'],
                         onTabSelected: (index) {
                           if (index == 0) {
                             // Stay on the same page or do something specific for "All Leads"
-                          } else if (index == 1) {
+                          }else if(index == 1){
+                            Navigator.push(context,
+                                MaterialPageRoute(builder: (context)=>FollowupScreen(
+                                    projectUniqueCode:selectedProjectCode,
+                                    campaignId:campaignId
+                                )));
+                          }
+                          else {
                             // Navigate to Groups page
                             Navigator.push(
                               context,
                               MaterialPageRoute(
                                   builder: (context) => GroupsScreen(
-                                    onGroupUpdated: () {},
-                                    group: {},
-                                    projectCode: widget.selectedProjectCode,
-                                  )),
+                                        onGroupUpdated: () {},
+                                        group: {},
+                                        projectCode: widget.selectedProjectCode, uniqueId: campaignId!,
+
+                                      )),
                             );
                           }
                         },
@@ -1244,372 +1369,226 @@ class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
                   ),
                 ),
                 Expanded(
-                  child: isLoading
-                      ? Container(
-                    alignment: Alignment.center,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SpinKitCircle(
-                          color: Colors.blue.shade900,
-                          size: 100.0,
-                        ),
-                        SizedBox(height: 16),
-                        Text(
-                          'Loading...',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                      : apiData.isEmpty
-                      ? Container(
-                    alignment: Alignment.center,
-                    child: Image.asset(
-                      'assets/images/nodata.png',
-                      height: 150,
-                      width: 150,
-                    ),
-                  )
-                      : filteredData.isEmpty && !showNoResults
-                      ? ListView.builder(
-                    itemCount: sortedData.length,
-                    itemBuilder: (context, index) {
-                      final data = sortedData[index];
-                      final email = data['email'] ?? '';
-                      final name = data['name'] ?? '';
-                      final phone = data['phone'] ?? '';
-                      String status = data['contact'] ?? '';
-
-                      // Determine which date field is present
-                      final date = data.containsKey('added_date')
-                          ? data['added_date']
-                          : data.containsKey('created_date')
-                          ? data['created_date']
-                          : '';
-
-                      // Parse and format the date if it's present
-                      DateTime? parsedDate;
-                      if (date.isNotEmpty) {
-                        try {
-                          parsedDate = DateTime.parse(date);
-                        } catch (e) {
-                          parsedDate =
-                          null; // Handle parsing errors
-                        }
-                      }
-
-                      final formattedDate = parsedDate != null
-                          ? DateFormat('dd/MM/yy')
-                          .format(parsedDate)
-                          : '';
-
-                      return Container(
-                        margin: EdgeInsets.symmetric(
-                            vertical: 8, horizontal: 16),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          color: Colors.white,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.5),
-                              spreadRadius: 3,
-                              blurRadius: 5,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: ListTile(
-                          title: Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment:
-                                  CrossAxisAlignment.start,
-                                  children: [
-                                    // Container(
-                                    //   width: 110,
-                                    //   height: 25,
-                                    //   decoration: BoxDecoration(
-                                    //       color: status=='uncontacted'?Colors.red:Colors.blue.shade900,
-                                    //       borderRadius: BorderRadius.circular(10)),
-                                    //   child: Center(
-                                    //     child: Text(
-                                    //       status,
-                                    //       style: TextStyle(color: Colors.white),
-                                    //     ),
-                                    //   ),
-                                    // ),
-                                    // SizedBox(height: 2,),
-                                    Row(
-                                      children: [
-                                        Text(
-                                          name,
-                                          style: TextStyle(
-                                            fontFamily: 'Poppins',
-                                            fontWeight: status ==
-                                                'uncontacted'
-                                                ? FontWeight.bold
-                                                : FontWeight
-                                                .normal,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                        Text(
-                                          formattedDate,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontStyle:
-                                            FontStyle.italic,
-                                            fontFamily: 'Poppins',
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Column(
-                                      children: [
-                                        Text(
-                                          phone,
-                                          style: TextStyle(
-                                            fontFamily: 'Poppins',
-                                            fontSize: 14,
-                                            fontWeight: status ==
-                                                'uncontacted'
-                                                ? FontWeight.bold
-                                                : FontWeight
-                                                .normal,
-                                          ),
-                                        ),
-                                        IconButton(
-                                            onPressed: () {
-                                              launchDialer(phone);
-                                            },
-                                            icon: Icon(
-                                              Icons.phone,
-                                              color: Colors.green,
-                                            )),
-                                        ElevatedButton(
-                                            style: ElevatedButton
-                                                .styleFrom(
-                                                backgroundColor:
-                                                Colors
-                                                    .blue
-                                                    .shade900),
-                                            onPressed: () {
-                                              navigateToKeywordDetailScreen(
-                                                  index);
-                                            },
-                                            child: Text(
-                                              'Details',
-                                              style: TextStyle(
-                                                  color: Colors
-                                                      .white),
-                                            ))
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              )
-                            ],
-                          ),
-                          onTap: () {
-                            navigateToKeywordDetailScreen(index);
-                          },
-                        ),
-                      );
-                    },
-                  )
-                      : filteredData.isEmpty && showNoResults
-                      ? Container(
-                    alignment: Alignment.center,
-                    child: Text(
-                      'No search data found',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  )
-                      : ListView.builder(
-                    itemCount: filteredData.length,
-                    itemBuilder: (context, index) {
-                      final data = filteredData[index];
-                      // Combine both date fields, prioritizing 'added_date' if both are present
-                      final date = data['added_date'] ??
-                          data['created_date'] ??
-                          '';
-                      final email = data['email'] ?? '';
-                      final name = data['name'] ?? '';
-                      final phone = data['phone'] ?? '';
-                      String status = data['contact'] ?? '';
-                      final formattedDate =
-                      calculateTimeDifference(date);
-
-                      return GestureDetector(
-                        onLongPress: () {
-                          navigateToKeywordDetailScreen(
-                              index);
-                        },
-                        onLongPressEnd: (details) {
-                          // On long press end, close the detail screen
-                          Navigator.of(context).pop();
-                        },
-                        child: Container(
-                          margin: EdgeInsets.symmetric(
-                              vertical: 4, horizontal: 12),
-                          decoration: BoxDecoration(
-                            borderRadius:
-                            BorderRadius.circular(10),
-                            color: Colors.white,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey
-                                    .withOpacity(0.5),
-                                spreadRadius: 3,
-                                blurRadius: 5,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: ListTile(
-                            leading: Builder(
-                              builder: (context) {
-                                // Determine the GIF path based on the source
-                                String source =
-                                    data['source'] ?? '';
-                                String gifPath;
-
-                                if (source == 'lead') {
-                                  gifPath =
-                                  'assets/images/email.gif'; // Path for lead GIF
-                                } else {
-                                  gifPath =
-                                  'assets/images/chatleads.gif'; // Path for chat leads GIF
-                                }
-                                // else {
-                                // //   gifPath = 'assets/images/default.gif'; // Default GIF if source is unknown
-                                // // }
-
-                                return Image.asset(
-                                  gifPath,
-                                  width: 40,
-                                  height: 40,
-                                  fit: BoxFit.cover,
-                                );
-                              },
-                            ),
-                            title: Row(
-                              mainAxisAlignment:
-                              MainAxisAlignment
-                                  .spaceBetween,
+                    child: isLoading
+                        ? Container(
+                            alignment: Alignment.center,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                    CrossAxisAlignment
-                                        .start,
-                                    children: [
-                                      Text(
-                                        name,
-                                        style: TextStyle(
-                                          fontFamily:
-                                          'Poppins',
-                                          fontWeight: status ==
-                                              'uncontacted'
-                                              ? FontWeight
-                                              .w600
-                                              : FontWeight
-                                              .normal,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        height: 10,
-                                      ),
-                                      Row(
-                                        children: [
-                                          Text(
-                                            phone,
-                                            style: TextStyle(
-                                              fontFamily:
-                                              'Poppins',
-                                              fontSize: 14,
-                                              fontWeight: status ==
-                                                  'uncontacted'
-                                                  ? FontWeight
-                                                  .w600
-                                                  : FontWeight
-                                                  .normal,
-                                            ),
-                                          ),
-                                          // Icon(Icons.info,color: Colors.blue.shade900,),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
+                                SpinKitCircle(
+                                  color: Colors.blue.shade900,
+                                  size: 100.0,
                                 ),
-                                Column(
-                                  children: [
-                                    Text(
-                                      formattedDate,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        // fontStyle: FontStyle.italic,
-                                        fontFamily: 'Poppins',
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                    Row(
-                                      mainAxisAlignment:
-                                      MainAxisAlignment
-                                          .spaceBetween,
-                                      children: [
-                                        SizedBox(width: 4,),
-                                        GestureDetector(
-                                          child: Icon(
-                                            Icons.info,
-                                            color: Colors.blue
-                                                .shade900,
-                                          ),
-                                          onTap: () {
-                                            navigateToKeywordDetailScreen(
-                                                index);
-                                          },
-                                        ),
-                                        SizedBox(width:12),
-                                        IconButton(
-                                            onPressed: () {
-                                              launchDialer(
-                                                  phone);
-                                            },
-                                            icon: Icon(
-                                              Icons.phone,
-                                              color: Colors
-                                                  .green,
-                                            )),
-
-                                      ],
-                                    ),
-                                  ],
+                                SizedBox(height: 16),
+                                Text(
+                                  'Loading...',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ],
                             ),
-                            // onTap: () {
-                            //   navigateToKeywordDetailScreen(
-                            //       index);
-                            // },
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
+                          )
+                        : _leads.isEmpty
+                            ? Container(
+                                alignment: Alignment.center,
+                                child: Image.asset(
+                                  'assets/images/nodata.png',
+                                  height: 150,
+                                  width: 150,
+                                ),
+                              )
+                            : ListView.builder(
+                                itemCount: _leads.length,
+                                itemBuilder: (context, index) {
+                                  final lead = _leads[index];
+                                  String phoneNumber =
+                                      lead['phone_number'] ?? 'No phone';
+                                  String formattedNumber =
+                                      phoneNumber.replaceAll('p:', '');
+                                  return Container(
+                                    margin: EdgeInsets.symmetric(
+                                        vertical: 8, horizontal: 16),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10),
+                                      color: Colors.white,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.grey.withOpacity(0.5),
+                                          spreadRadius: 3,
+                                          blurRadius: 5,
+                                          offset: const Offset(0, 3),
+                                        ),
+                                      ],
+                                    ),
+                                    child: ListTile(
+                                      title: Row(
+                                        children: [
+                                          if (lead['platform'] == 'Google Ads')
+                                            Image.asset(
+                                              'assets/images/adwords.png', // Path to your PNG image for Google Ads
+                                              height: 30.0,
+                                              width: 30.0,
+                                            )
+                                          else if (lead['platform'] == 'ig')
+                                            Image.asset(
+                                              'assets/images/instagram.png', // Path to your PNG image for Instagram
+                                              height: 30.0,
+                                              width: 30.0,
+                                            )
+                                          else if (lead['platform'] == 'Website')
+                                              Image.asset(
+                                                'assets/images/web-search.png', // Path to your PNG image for Instagram
+                                                height: 35.0,
+                                                width: 35.0,
+                                              )
+                                          else
+                                            Icon(
+                                              lead['platform'] == 'fb'
+                                                  ? FontAwesomeIcons.facebook
+                                                  : Icons.help_outline, // Default icon if not recognized
+                                              size: 35.0,
+                                              color: lead['platform'] == 'fb'
+                                                  ? Colors.blue.shade900
+                                                  : Colors.grey, // Default color
+                                            ),
+                                      SizedBox(
+                                            width: 5,
+                                          ),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    SizedBox(
+                                                      width: 5,
+                                                    ),
+                                                    Expanded(
+                                                      child: Text(
+                                                        lead['full_name'] ??
+                                                            'Unknown Name',
+                                                        style: TextStyle(
+                                                          fontFamily: 'Poppins',
+                                                          fontWeight:
+                                                              lead['contact'] ==
+                                                                      'uncontacted'
+                                                                  ? FontWeight
+                                                                      .bold
+                                                                  : FontWeight
+                                                                      .normal,
+                                                          fontSize: 16,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                SizedBox(
+                                                  height: 10,
+                                                ),
+                                                Row(
+                                                  children: [
+                                                    SizedBox(
+                                                      width: 5,
+                                                    ),
+                                                    Text(
+                                                      lead['phone_number']
+                                                              .replaceAll(
+                                                                  RegExp(
+                                                                      r'[^0-9]'),
+                                                                  '') ??
+                                                          'No phone',
+                                                      style: TextStyle(
+                                                        fontFamily: 'Poppins',
+                                                        fontSize: 14,
+                                                        fontWeight: lead[
+                                                                    'contact'] ==
+                                                                'uncontacted'
+                                                            ? FontWeight.bold
+                                                            : FontWeight.normal,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Column(
+                                            children: [
+                                              Text(
+                                                calculateTimeDifference(lead[
+                                                    'created_at'
+                                                        .split(' ')[0]]),
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  // fontStyle: FontStyle.italic,
+                                                  fontFamily: 'Poppins',
+                                                  color: Colors.grey,
+                                                ),
+                                              ),
+                                              SizedBox(height: 10,),
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  SizedBox(
+                                                    width: 4,
+                                                  ),
+                                                  GestureDetector(
+                                                    child: Image.asset(
+                                                      'assets/images/user_info.png',
+                                                      width: 30.0, // Set the width
+                                                      height: 30.0, // Set the height
+                                                      fit: BoxFit.cover,
+                                                    ),
+                                                    onTap: () {
+                                                      Navigator.push(
+                                                        context,
+                                                        MaterialPageRoute(
+                                                          builder: (context) => LeadDetailsScreen(
+                                                            lead: lead,
+                                                            user: widget.user,
+                                                            projectUrl: _projectUrl ?? '',
+                                                            selectedProjectCode: selectedProjectCode ?? '',
+                                                          ),
+                                                        ),
+                                                      ).then((_) {
+                                                        // Refresh data or update UI after returning from LeadDetailsScreen
+                                                      loadPaidLeads(campaignId!);// Call your method to refresh the data or UI
+                                                      });
+                                                    },
+                                                  ),
+
+                                                  SizedBox(width: 30),
+                                                  GestureDetector(
+                                                    onTap: () {
+                                                      launchDialer(lead[
+                                                      'phone_number']);
+                                                    },
+                                                    child: Image.asset(
+                                                      'assets/images/telephone.png',
+                                                      width: 30,
+                                                      height: 30,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                      // onTap: () {
+                                      //   navigateToKeywordDetailScreen(
+                                      //       index);
+                                      // },
+                                    ),
+                                  );
+                                }))
               ],
-            ),
+            )
           ],
         ),
       ),
@@ -1617,28 +1596,29 @@ class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
   }
 }
 
-class DetailScreen extends StatefulWidget {
-  final Map<String, dynamic>? data;
+class LeadDetailsScreen extends StatefulWidget {
+  final Map<String, dynamic> lead;
   final User user;
   final String projectUrl;
   final selectedProjectCode;
 
-  DetailScreen({
-    this.data,
+  LeadDetailsScreen({
     required this.user,
     required this.projectUrl,
     this.selectedProjectCode,
+    required this.lead,
   });
 
   @override
-  State<DetailScreen> createState() => _DetailScreenState();
+  State<LeadDetailsScreen> createState() => _LeadDetailsScreenState();
 }
 
-class _DetailScreenState extends State<DetailScreen>
+class _LeadDetailsScreenState extends State<LeadDetailsScreen>
     with WidgetsBindingObserver {
   String contactedStatus = '';
   String changedStatus = '';
   List<Map<String, dynamic>> _groups = [];
+  List<String> groups = [];
   List<dynamic> _userGroupNames = [];
   DateTime? _selectedFollowUpDate;
   final TextEditingController _titleController = TextEditingController();
@@ -1648,24 +1628,28 @@ class _DetailScreenState extends State<DetailScreen>
   int _contactedCount = 0;
   int _uncontactedCount = 0;
   bool isVisible = true;
+  bool _isLoading = true;
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    _getContactStatus(widget.selectedProjectCode, widget.data?['name']);
-    _loadGroups();
-    _loadUserGroups();
-    _loadFollowUpDateForUser(widget.data?['name']);
-    _loadCounts();
-    _loadFollowUpDate(widget.data?['name']);
+    _getContactStatus(widget.lead['campaign_id'], widget.lead['paid_id']);
+    _loadGroups(widget.user.project_unique_code);
+    print(widget.user.project_unique_code);
+    print(widget.lead['paid_id']);
+    _loadFollowUpDateForUser(widget.lead['paid_id']);
+    fetchUserGroups(widget.user.project_unique_code, widget.lead['paid_id'],'paid');
+    // _loadUserGroups();
+    // loadFollowUpDate(widget.lead['paid_id']);
+    // _loadCounts();
+    _loadFollowUpDate(widget.lead['paid_id']);
   }
 
   void didPopNext() {
-    _loadGroups();
-    _loadUserGroups();
-    _loadFollowUpDateForUser(widget.data?['name']);
-    _loadFollowUpDate(widget.data?['name']);
+    _loadGroups(widget.user.project_unique_code);
+    _loadFollowUpDateForUser(widget.lead['paid_id']);
+    _loadFollowUpDate(widget.lead['paid_id']);
   }
 
   @override
@@ -1689,69 +1673,60 @@ class _DetailScreenState extends State<DetailScreen>
   void _toggleContainer() {
     setState(() {
       isVisible =
-      !isVisible; // Toggle the visibility: true -> false, false -> true
+          !isVisible; // Toggle the visibility: true -> false, false -> true
     });
   }
 
-  Future<void> _updateContactStatus(String unique_id, String name) async {
+  Future<void> _updateContactStatus(String unique_id, String id) async {
     // Retrieve the current status from SharedPreferences
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
     // Use a unique key to store the status
-    String contactKey = 'contact_status_${unique_id}_$name';
+    String contactKey = 'contact_status_${unique_id}_$id';
     String currentStatus = prefs.getString(contactKey) ?? 'uncontacted';
 
     // Determine the new status
     String newStatus =
-    (currentStatus == 'uncontacted') ? 'contacted' : 'uncontacted';
+        (currentStatus == 'uncontacted') ? 'contacted' : 'uncontacted';
 
     // Prepare the body data
     Map<String, String> body = {
       'unique_id': unique_id,
-      'name': name,
+      'seo_id': id,
       'contact': newStatus,
     };
 
-    // First API call (lead endpoint)
-    final leadResponse = await http.post(
+    // API call to the paid_lead endpoint
+    final response = await http.post(
       Uri.parse(
-          'https://clients.dotphi.com/Api/login/lead'), // First API endpoint
+          'https://clients.dotphi.com/Api/login/paid_lead'), // Updated API endpoint
       body: body,
     );
 
-    // Second API call (livechat endpoint)
-    final liveChatResponse = await http.post(
-      Uri.parse(
-          'https://clients.dotphi.com/Api/Login/livechat'), // Second API endpoint
-      body: body,
-    );
+    // Handle response
+    if (response.statusCode == 200) {
+      final responseData = json.decode(response.body);
 
-    // Handle responses
-    if (leadResponse.statusCode == 200 && liveChatResponse.statusCode == 200) {
-      final leadResponseData = json.decode(leadResponse.body);
-      final liveChatResponseData = json.decode(liveChatResponse.body);
-
-      // If both API responses indicate success, update SharedPreferences
-      if (leadResponseData['status'] == 'success' &&
-          liveChatResponseData['status'] == 'success') {
+      // If the API response indicates success, update SharedPreferences
+      if (responseData['status'] == 'success') {
         await prefs.setString(contactKey, newStatus);
         print(
-            'Contact status updated to $newStatus for $name in project $unique_id');
+            'Contact status updated to $newStatus for ${widget.lead['full_name']} in project $unique_id');
       } else {
         print(
-            'Failed to update contact status on server (Lead: ${leadResponseData['message']}, LiveChat: ${liveChatResponseData['message']})');
+            'Failed to update contact status on server: ${responseData['message']}');
       }
     } else {
       print(
-          'Failed to update contact status. Lead Response: ${leadResponse.statusCode}, LiveChat Response: ${liveChatResponse.statusCode}');
+          'Failed to update contact status. Response code: ${response.statusCode}');
     }
   }
 
-  Future<void> _getContactStatus(String unique_id, String name) async {
+  Future<void> _getContactStatus(String unique_id, String seoId) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
     // Use the same unique key to retrieve the status
-    String contactKey = 'contact_status_${unique_id}_$name';
+    String contactKey = 'contact_status_${unique_id}_$seoId';
     String storedStatus = prefs.getString(contactKey) ?? 'uncontacted';
 
     setState(() {
@@ -1777,48 +1752,162 @@ class _DetailScreenState extends State<DetailScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              ListTile(
-                leading: Icon(Icons.perm_contact_cal_sharp,
-                    color: Colors.blue.shade900),
-                title: Text(
-                  'Add to Phonebook',
-                  style: TextStyle(color: Colors.blue.shade900),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade900,
+                  borderRadius: BorderRadius.circular(15)
                 ),
-                onTap: () {
-                  // Handle "Add to Phonebook" action
-                  _addToContacts();
-                  Navigator.pop(context); // Close the bottom sheet
-                },
+                child: ListTile(
+                  leading: Icon(Icons.perm_contact_cal_sharp,
+                      color: Colors.white),
+                  title: Text(
+                    'Add to Phonebook',
+                    style: TextStyle(color: Colors.white,fontFamily: 'Poppins'),
+                  ),
+                  onTap: () {
+                    // Handle "Add to Phonebook" action
+                    _addToContacts();
+                    Navigator.pop(context); // Close the bottom sheet
+                  },
+                ),
               ),
-              Divider(),
-              ListTile(
-                leading: Icon(Icons.check, color: Colors.blue.shade900),
-                title: Text(
-                  widget.data?['contact'] == 'uncontacted'
-                      ? 'Mark as Contacted'
-                      : 'Mark as Uncontacted',
-                  style: TextStyle(color: Colors.blue.shade900),
+              SizedBox(height: 10,),
+              Container(
+                decoration: BoxDecoration(
+                    color: Colors.blue.shade900,
+                    borderRadius: BorderRadius.circular(15)
                 ),
-                onTap: () {
-                  // Handle "Mark as Contacted" action
-                  _toggleContainer();
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text(
-                        "Status will be updated to ${widget.data?['contact'] == 'uncontacted' ? 'contacted' : 'uncontacted'}"),
-                    backgroundColor: Colors.blue.shade900,
-                  ));
-                  _updateContactStatus(
-                      widget.selectedProjectCode, widget.data?['name']);
+                child: ListTile(
+                  leading: Icon(Icons.check, color: Colors.white),
+                  title: Text(
+                    widget.lead['contact'] == 'uncontacted'
+                        ? 'Mark as Contacted'
+                        : 'Mark as Uncontacted',
+                    style: TextStyle(color: Colors.white,fontFamily: 'Poppins'),
+                  ),
+                  onTap: () {
+                    // Handle "Mark as Contacted" action
+                    _toggleContainer();
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(
+                          "Status will be updated to ${widget.lead['contact'] == 'uncontacted' ? 'contacted' : 'uncontacted'}",style: TextStyle(fontFamily: 'Poppinsg'),),
+                      backgroundColor: Colors.blue.shade900,
+                    ));
+                    _updateContactStatus(
+                        widget.lead['campaign_id'], widget.lead['paid_id']);
+                    setState(() {});
 
-                  Navigator.pop(context); // Close the bottom sheet
-                },
+                    Navigator.pop(context); // Close the bottom sheet
+                  },
+                ),
               ),
+              SizedBox(height: 20,)
             ],
           ),
         );
       },
     );
   }
+
+  Future<void> _loadGroups(String projectUniqueCode) async {
+    final url = Uri.parse('https://clients.dotphi.com/Api/login/get_groups');
+
+    try {
+      // Make a POST request with project_unique_code as a parameter
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: {
+          'project_unique_code': projectUniqueCode,
+        },
+      );
+
+      print('API Response: ${response.body}'); // Debug: print full response
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+
+        // Check if the response has the 'groups' key
+        if (jsonResponse.containsKey('groups')) {
+          final groupsList = jsonResponse['groups'];
+          if (groupsList is List<dynamic>) {
+            setState(() {
+              _groups = List<Map<String, dynamic>>.from(groupsList);
+              _isLoading = false;
+            });
+          } else {
+            print('Error: "groups" is not a list');
+            setState(() {
+              _isLoading = false;
+            });
+          }
+        } else {
+          print('Error: Key "groups" not found in response');
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      } else {
+        print('Failed to fetch groups. Status code: ${response.statusCode}');
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error fetching groups: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> fetchUserGroups(String projectUniqueCode, String userId, String type) async {
+    print(projectUniqueCode);
+    print(userId);
+    print(type);
+
+    try {
+      // Define the request body for x-www-form-urlencoded
+      Map<String, String> body = {
+        'project_unique_code': projectUniqueCode,
+        'user_id': userId,
+        'type': type,
+      };
+
+      // Make the POST request
+      final response = await http.post(
+        Uri.parse('https://clients.dotphi.com/Api/login/get_groups_for_user'),
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: body,
+      );
+
+      // Check if the request was successful
+      if (response.statusCode == 200) {
+        print('Response body: ${response.body}'); // Log the full response body
+        final responseData = jsonDecode(response.body);
+
+        // Check if the response indicates success and contains group_names
+        if (responseData['status'] == 'success' && responseData['group_names'] is List) {
+          // Parse and store the group names in the variable
+          groups = List<String>.from(responseData['group_names']); // Change to List<String> for group names
+          print('Fetched group names stored in groups: $groups');
+        } else {
+          print('Error fetching groups: ${responseData['message'] ?? 'No message provided'}');
+          groups = []; // Clear the list if there's an error in the response
+        }
+      } else {
+        print('Failed to fetch groups. Status code: ${response.statusCode}');
+        groups = []; // Clear the list if the status code is not 200
+      }
+    } catch (e) {
+      // Handle any errors during the request
+      print('An error occurred while fetching groups: $e');
+      groups = []; // Clear the list if there's an exception
+    }
+  }
+
 
   void _groupsBottomSheet(BuildContext context) {
     showModalBottomSheet(
@@ -1829,7 +1918,7 @@ class _DetailScreenState extends State<DetailScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                color: Colors.blue.shade900,
+                // color: Colors.blue.shade900,
                 height: 50,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
@@ -1837,53 +1926,64 @@ class _DetailScreenState extends State<DetailScreen>
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // GestureDetector(
-                      //   onTap: () {
-                      //     Navigator.pop(context);
-                      //     Navigator.push(
-                      //         context,
-                      //         MaterialPageRoute(
-                      //             builder: (context) => GroupsScreen(
-                      //                   onGroupUpdated: _onGroupUpdated, group: {},
-                      //                 )));
-                      //     _onGroupUpdated();
-                      //   },
-                      //   child: Text(
-                      //     "Manage groups",
-                      //     style: TextStyle(color: Colors.white),
-                      //   ),
-                      // ),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => GroupsScreen(
+                                        onGroupUpdated: _onGroupUpdated,
+                                        group: {},
+                                        projectCode:
+                                            widget.user.project_unique_code, uniqueId: widget.lead['campaign_id'],
+
+                                      )));
+                          _onGroupUpdated();
+                        },
+                        child: Text(
+                          "Manage groups",
+                          style: TextStyle(color: Colors.blue.shade900,fontFamily:'Poppins',fontWeight: FontWeight.bold),
+                        ),
+                      ),
                       GestureDetector(
                           onTap: () async {
                             Navigator.pop(
                                 context); // Close the OptionsModalSheet
                             await Navigator.push(
                               context,
-                              MaterialPageRoute(
-                                builder: (context) => CreateGroupPage(
-                                  onGroupCreated: () async {
-                                    _groups = await loadGroups();
-                                    Future.delayed(Duration(milliseconds: 150),
-                                            () {
-                                          _groupsBottomSheet(context);
-                                        });
+                                MaterialPageRoute(
+                                  builder: (context) => CreateGroupPage(
+                                    projectUniqueCode: widget.user.project_unique_code,
+                                    onGroupCreated: () async {
+                                      print("Starting to load groups...");  // Debug message
+                                      await _loadGroups(widget.user.project_unique_code);
 
-                                    // Callback function, not directly used here but can be used if needed},
-                                  },
-                                ),
-                              ),
+                                      setState(() {
+                                        print("Groups loaded, updating UI...");  // Debug message
+                                      });
+
+                                      print("Attempting to open bottom sheet...");  // Debug message
+                                      _groupsBottomSheet(context);  // Open the bottom sheet immediately
+                                    },
+                                  ),
+                                )
+
+
+
                             );
-
                             // Automatically show GroupsModalSheet after CreateGroupPage is closed
                           },
                           child: Text(
                             "Create New",
-                            style: TextStyle(color: Colors.white),
+                            style: TextStyle(color: Colors.blue.shade900,fontFamily:'Poppins',fontWeight: FontWeight.bold),
                           ))
                     ],
                   ),
                 ),
               ),
+              _groups.isEmpty
+                  ? Center(child: CircularProgressIndicator()):
               Expanded(
                 child: ListView.builder(
                   itemCount: _groups.length,
@@ -1896,12 +1996,10 @@ class _DetailScreenState extends State<DetailScreen>
                         Navigator.pop(context);
                       },
                       child: ListTile(
-                        leading: Icon(
-                          Icons.group,
-                          color: Color(group['color']),
-                        ),
+                        leading: Image.asset('assets/images/group.png',
+                          height:25 ,width: 25,),
                         title: Text(
-                          group['name'],
+                          group['group_name'],
                           style: TextStyle(color: Colors.black, fontSize: 18),
                         ),
                       ),
@@ -1921,78 +2019,106 @@ class _DetailScreenState extends State<DetailScreen>
       context: context,
       builder: (context) {
         return Container(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: MediaQuery.of(context).size.width,
-                height: 50,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      vertical: 15.0, horizontal: 15.0),
-                  child: Text(
-                    "Options",
-                    style: TextStyle(
-                      color: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal:10.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: MediaQuery.of(context).size.width,
+                  height: 50,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 15.0, horizontal: 15.0),
+                    child: Center(
+                      child: Text(
+                        "Options",
+                        style: TextStyle(
+                            color: Colors.blue.shade900,
+                            fontFamily: 'Poppins',
+                            fontWeight: FontWeight.bold
+                        ),
+                      ),
                     ),
                   ),
+                  decoration: BoxDecoration(
+                      // color: Colors.blue.shade900,
+                      borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(10),
+                          topRight: Radius.circular(10))),
                 ),
-                decoration: BoxDecoration(
-                    color: Colors.blue.shade900,
-                    borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(10),
-                        topRight: Radius.circular(10))),
-              ),
-              ListTile(
-                leading: Icon(Icons.groups, color: Colors.blue.shade900),
-                title: Text(
-                  'Add to groups',
-                  style: TextStyle(color: Colors.blue.shade900),
+                SizedBox(height: 10,),
+                Container(
+                  decoration: BoxDecoration(
+                      color: Colors.blue.shade900,
+                      borderRadius: BorderRadius.circular(15)
+                  ),
+                  child: ListTile(
+                    leading: Icon(Icons.groups, color: Colors.white),
+                    title: Text(
+                      'Add to groups',
+                      style: TextStyle(color: Colors.white, fontFamily: 'Poppins'),
+                    ),
+                    onTap: () {
+                      _loadGroups(widget.user.project_unique_code);
+                      Navigator.pop(context);
+                      Future.delayed(Duration(milliseconds: 100), () {
+                        _groupsBottomSheet(context); // Show the groups modal sheet
+                      });
+                    },
+                  ),
                 ),
-                onTap: () {
-                  _loadGroups();
-                  Navigator.pop(context);
-                  Future.delayed(Duration(milliseconds: 100), () {
-                    _groupsBottomSheet(context); // Show the groups modal sheet
-                  });
-                },
-              ),
-              Divider(),
-              ListTile(
-                leading: Icon(Icons.close, color: Colors.blue.shade900),
-                title: Text(
-                  widget.data?['contact'] == 'uncontacted'
-                      ? 'Mark as Contacted'
-                      : 'Mark as Uncontacted',
-                  style: TextStyle(color: Colors.blue.shade900),
+                SizedBox(height: 10,),
+                Container(
+                  decoration: BoxDecoration(
+                      color: Colors.blue.shade900,
+                      borderRadius: BorderRadius.circular(15)
+                  ),
+                  child: ListTile(
+                    leading: Icon(Icons.close, color: Colors.white),
+                    title: Text(
+                      widget.lead['contact'] == 'uncontacted'
+                          ? 'Mark as Contacted'
+                          : 'Mark as Uncontacted',
+                      style: TextStyle(color: Colors.white, fontFamily: 'Poppins'),
+                    ),
+                    onTap: () {
+                      _toggleContainer();
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text(
+                            "Status will be updated to ${widget.lead['contact'] == 'uncontacted' ? 'contacted' : 'uncontacted'}"),
+                        backgroundColor: Colors.blue.shade900,
+                      ));
+                      _updateContactStatus(
+                          widget.lead['campaign_id'], widget.lead['full_name']);
+                      Navigator.pop(context); // Close the bottom sheet
+                    },
+                  ),
                 ),
-                onTap: () {
-                  _toggleContainer();
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text(
-                        "Status will be updated to ${widget.data?['contact'] == 'uncontacted' ? 'contacted' : 'uncontacted'}"),
-                    backgroundColor: Colors.blue.shade900,
-                  ));
-                  _updateContactStatus(
-                      widget.selectedProjectCode, widget.data?['name']);
-                  Navigator.pop(context); // Close the bottom sheet
-                },
-              ),
-              Divider(),
-              ListTile(
-                leading: Icon(Icons.perm_contact_cal_sharp,
-                    color: Colors.blue.shade900),
-                title: Text(
-                  'Add to phonebook',
-                  style: TextStyle(color: Colors.blue.shade900),
+                SizedBox(height: 10,),
+                Container(
+                  decoration: BoxDecoration(
+                      color: Colors.blue.shade900,
+                      borderRadius: BorderRadius.circular(15)
+                  ),
+                  child: ListTile(
+                    leading: Icon(Icons.perm_contact_cal_sharp,
+                        color: Colors.white),
+                    title: Text(
+                      'Add to phonebook',
+                      style: TextStyle(color: Colors.white, fontFamily: 'Poppins'),
+                    ),
+                    onTap: () {
+                      // Handle "Mark as Contacted" action
+                      _addToContacts();
+                      Navigator.pop(context); // Close the bottom sheet
+                    },
+                  ),
                 ),
-                onTap: () {
-                  // Handle "Mark as Contacted" action
-                  _addToContacts();
-                  Navigator.pop(context); // Close the bottom sheet
-                },
-              ),
-            ],
+                SizedBox(height: 20,),
+
+              ],
+            ),
           ),
         );
       },
@@ -2003,9 +2129,9 @@ class _DetailScreenState extends State<DetailScreen>
     // Request permission to access contacts
     if (await Permission.contacts.request().isGranted) {
       final contact = Contact(
-        givenName: widget.data?['name'],
-        phones: [Item(label: 'mobile', value: widget.data?['phone'])],
-        emails: [Item(label: 'work', value: widget.data?['email'])],
+        givenName: widget.lead['full_name'],
+        phones: [Item(label: 'mobile', value: widget.lead['phone_number'])],
+        emails: [Item(label: 'work', value: widget.lead['email'])],
       );
 
       await ContactsService.addContact(contact);
@@ -2037,16 +2163,6 @@ class _DetailScreenState extends State<DetailScreen>
     await prefs.setString('groups', groupsString);
   }
 
-  Future<void> _loadGroups() async {
-    final prefs = await SharedPreferences.getInstance();
-    final groupsString = prefs.getString('groups');
-    if (groupsString != null) {
-      setState(() {
-        _groups = List<Map<String, dynamic>>.from(json.decode(groupsString));
-      });
-    }
-  }
-
   Future<void> _loadUserGroups() async {
     final prefs = await SharedPreferences.getInstance();
     // Load updated groups data from SharedPreferences
@@ -2054,17 +2170,17 @@ class _DetailScreenState extends State<DetailScreen>
     print("Printed group names: $groupsString");
     // Convert the JSON string into a list of maps
     final List<Map<String, dynamic>> allGroups =
-    List<Map<String, dynamic>>.from(jsonDecode(groupsString));
+        List<Map<String, dynamic>>.from(jsonDecode(groupsString));
     // Extract the user name
-    final userName = widget
-        .data?['name']; // Ensure 'name' is the correct identifier for the user
+    final userName = widget.lead[
+        'full_name']; // Ensure 'name' is the correct identifier for the user
 
     // Filter groups where the user is present
     final List<String> userGroupNames = allGroups
         .where((group) =>
-    group['users'] != null &&
-        (group['users'] as List<dynamic>)
-            .any((user) => user['name'] == userName))
+            group['users'] != null &&
+            (group['users'] as List<dynamic>)
+                .any((user) => user['name'] == userName))
         .map((group) => group['name'] as String)
         .toList();
 
@@ -2075,79 +2191,71 @@ class _DetailScreenState extends State<DetailScreen>
       _userGroupNames = userGroupNames;
     });
     // Ensure _loadGroups is called to refresh the list of groups if needed
-    await _loadGroups();
+    // await _loadGroups();
   }
 
   void _onGroupUpdated() {
     _loadUserGroups();
     // Reload the user groups when a group is updated
-    _loadFollowUpDate(widget.data?['name']);
-    _loadGroups();
+    // _loadFollowUpDate(widget.lead['full_name']);
+    // _loadGroups();
     _loadUserGroups();
   }
 
   Future<void> _addUserToGroup(Map<String, dynamic> group) async {
-    final prefs = await SharedPreferences.getInstance();
     final groupIndex = _groups.indexWhere((g) => g['id'] == group['id']);
 
     if (groupIndex != -1) {
-      final updatedGroup = _groups[groupIndex];
-      final userName = widget.data?['name'];
-      final email = widget.data?['email'];
-      final added_date = widget.data?['added_date'];
-      final phone = widget.data?['phone'];
-      final project_name = widget.data?['project_name'];
-      final domain = widget.data?['domain'];
-      final url = widget.data?['url'];
-      final message = widget.data?['message'];
-      final comments = widget.data?['comments'];
+      final groupId = group['group_id'].toString();
+      final userId = widget.lead['paid_id'].toString();
+      final projectUniqueCode = widget.user.project_unique_code;
 
-      if (updatedGroup['users'] == null) {
-        updatedGroup['users'] = [];
-      }
+      Map<String, String> body = {
+        'group_id': groupId,
+        'paid_id': userId,
+        'project_unique_code': projectUniqueCode,
+      };
 
-      // Check if the user is already in the group's users list
-      bool userExists =
-      updatedGroup['users'].any((user) => user['name'] == userName);
-      if (!userExists) {
-        updatedGroup['users'].add({
-          'name': userName,
-          'email': email,
-          'added_date': added_date,
-          'phone': phone,
-          'project_name': project_name,
-          'domain': domain,
-          'url': url,
-          'message': message,
-          'comments': comments
-        });
+      try {
+        // Send request to the API
+        final response = await http.post(
+          Uri.parse('https://clients.dotphi.com/Api/login/add_user_to_group'),
+          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+          body: body,
+        );
 
-        // Update in-memory list
-        _groups[groupIndex] = updatedGroup;
+        // Log the response for debugging
+        print('Response status: ${response.statusCode}');
+        print('Response body: ${response.body}');
 
-        // Save updated groups list back to SharedPreferences
-        await prefs.setString('groups', json.encode(_groups));
+        if (response.statusCode == 200) {
+          final responseData = jsonDecode(response.body);
 
-        // Save the group name in SharedPreferences
-        List<String> userGroupNames =
-            prefs.getStringList('groups_${userName}') ?? [];
-        userGroupNames.add(group['name']);
-        await prefs.setStringList('groups_${userName}', userGroupNames);
-
-        // Update the state to reflect the changes
-        setState(() {
-          _userGroupNames = userGroupNames;
-        });
-
+          if (responseData['status'] == 'success') {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(
+                  '${widget.lead['full_name']} added to ${group['group_name']} successfully'),
+              backgroundColor: Colors.blue.shade900,
+            ));
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(
+                  'Failed to add ${widget.lead['full_name']} to group: ${responseData['message']}'),
+              backgroundColor: Colors.red.shade900,
+            ));
+          }
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(
+                  'Failed to add ${widget.lead['full_name']} to group. Status code: ${response.statusCode}'),
+              backgroundColor: Colors.red.shade900));
+        }
+      } catch (e) {
+        // Handle any error during the request
+        print('Error adding user to group: $e');
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('${widget.data?['name']} saved to ${group['name']}'),
-          backgroundColor: Colors.blue.shade900,
-        ));
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content:
-            Text('${widget.data?['name']} is already in ${group['name']}'),
-            backgroundColor: Colors.blue.shade900));
+            content: Text('An error occurred: $e'),
+            backgroundColor: Colors.red.shade900));
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -2157,7 +2265,7 @@ class _DetailScreenState extends State<DetailScreen>
   }
 
   Future<void> _postFollowUpDate(String uniqueId, String seoId, DateTime followupDate) async {
-    final url = 'https://clients.dotphi.com/Api/login/lead'; // Replace with your actual endpoint
+    final url = 'https://clients.dotphi.com/Api/login/paid_lead';
 
     // Format the date as 'dd-MM-yyyy'
     String formattedDate = DateFormat('dd-MM-yyyy').format(followupDate);
@@ -2168,19 +2276,23 @@ class _DetailScreenState extends State<DetailScreen>
         '&followup=${Uri.encodeQueryComponent(formattedDate)}';
 
     print('Request body: $requestBody'); // Log the request body
-
     final response = await http.post(
       Uri.parse(url),
       headers: {'Content-Type': 'application/x-www-form-urlencoded'},
       body: requestBody, // Pass the encoded body
     );
 
-    print('Response status code: ${response.statusCode}'); // Log the response status code
+    print(
+        'Response status code: ${response.statusCode}'); // Log the response status code
     print('Response body: ${response.body}'); // Log the response body
 
     if (response.statusCode == 200) {
       // Handle success
       print('Follow-up date posted successfully: ${response.body}');
+
+      // Save follow-up date in SharedPreferences based on seoId
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('followup_date_$seoId', formattedDate);
     } else {
       // Handle error
       print('Failed to post follow-up date: ${response.body}');
@@ -2199,9 +2311,6 @@ class _DetailScreenState extends State<DetailScreen>
       return 'Invalid date format';
     }
   }
-
-
-
 
   void _followUpBottomSheet(
       BuildContext context,
@@ -2227,27 +2336,31 @@ class _DetailScreenState extends State<DetailScreen>
             }
 
             Widget _buildListTile(String title, DateTime date) {
-              return ListTile(
-                title: Text(
-                  title,
-                  style: TextStyle(
-                    color: _selectedDate == date
-                        ? Colors.white
-                        : Colors.blue.shade900,
-                  ),
+              return Container(
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade900,
+                  borderRadius: BorderRadius.circular(15),
                 ),
-                tileColor: _selectedDate == date ? Colors.blue.shade900 : null,
-                onTap: () {
-                  setState(() {
-                    _selectedDate = date;
-                  });
-                  Navigator.pop(context);
-                  _saveFollowUpDateForUser(
-                      username, _selectedDate!); // Save selected date
-                  onDateSelected(_selectedDate); // Callback to update the date
-                  postFollowUpDate(uniqueId, seoId,
-                      _selectedDate!); // Call the passed post function
-                },
+                child: ListTile(
+                  title: Text(
+                    title,
+                    style: TextStyle(
+                        color:Colors.white,fontFamily: 'Poppins'
+                    ),
+                  ),
+                  tileColor: _selectedDate == date ? Colors.blue.shade900 : null,
+                  onTap: () {
+                    setState(() {
+                      _selectedDate = date;
+                    });
+                    Navigator.pop(context);
+                    _saveFollowUpDateForUser(
+                        username, _selectedDate!); // Save selected date
+                    onDateSelected(_selectedDate); // Callback to update the date
+                    postFollowUpDate(uniqueId, seoId,
+                        _selectedDate!); // Call the passed post function
+                  },
+                ),
               );
             }
 
@@ -2281,7 +2394,7 @@ class _DetailScreenState extends State<DetailScreen>
                     width: MediaQuery.of(context).size.width,
                     height: 50,
                     decoration: BoxDecoration(
-                      color: Colors.blue.shade900,
+                      // color: Colors.blue.shade900,
                       borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(10),
                         topRight: Radius.circular(10),
@@ -2290,34 +2403,56 @@ class _DetailScreenState extends State<DetailScreen>
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
                           vertical: 15.0, horizontal: 15.0),
-                      child: Text(
-                        "Schedule follow-up for $username",
-                        style: TextStyle(color: Colors.white),
+                      child: Center(
+                        child: Text(
+                          "Schedule follow-up",
+                          style: TextStyle(color: Colors.blue.shade900,fontFamily: 'Poppins',fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ),
                   ),
                   Expanded(
                     child: SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          _buildListTile('Today', DateTime.now()),
-                          _buildListTile('Tomorrow',
-                              DateTime.now().add(Duration(days: 1))),
-                          _buildListTile('3 days from now',
-                              DateTime.now().add(Duration(days: 3))),
-                          _buildListTile('1 week from now',
-                              DateTime.now().add(Duration(days: 7))),
-                          _buildListTile('1 month from now',
-                              DateTime.now().add(Duration(days: 30))),
-                          ListTile(
-                            title: Text(
-                              'Select custom date and time',
-                              style: TextStyle(color: Colors.blue.shade900),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                        child: Column(
+                          children: [
+                            _buildListTile('Today', DateTime.now()),
+                            SizedBox(height: 10,),
+                            _buildListTile('Tomorrow',
+                                DateTime.now().add(Duration(days: 1))),
+                            SizedBox(height: 10,),
+
+                            _buildListTile('3 days from now',
+                                DateTime.now().add(Duration(days: 3))),
+                            SizedBox(height: 10,),
+
+                            _buildListTile('1 week from now',
+                                DateTime.now().add(Duration(days: 7))),
+                            SizedBox(height: 10,),
+
+                            _buildListTile('1 month from now',
+                                DateTime.now().add(Duration(days: 30))),
+                            SizedBox(height: 10,),
+
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.blue.shade900,
+                                borderRadius:BorderRadius.circular(15)
+                              ),
+                              child: ListTile(
+                                title: Text(
+                                  'Select custom date and time',
+                                  style: TextStyle(color: Colors.white,fontFamily: 'Poppins'),
+                                ),
+                                onTap:
+                                    _showCustomDateSelector, // Handle custom date selection
+                              ),
                             ),
-                            onTap:
-                            _showCustomDateSelector, // Handle custom date selection
-                          ),
-                        ],
+                            SizedBox(height: 10,),
+
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -2335,9 +2470,9 @@ class _DetailScreenState extends State<DetailScreen>
     await prefs.setString('follow_up_date_$username', date.toIso8601String());
   }
 
-  Future<void> _loadFollowUpDateForUser(String username) async {
+  Future<void> _loadFollowUpDateForUser(String seoId) async {
     final prefs = await SharedPreferences.getInstance();
-    String? dateString = prefs.getString('follow_up_date_$username');
+    String? dateString = prefs.getString('follow_up_date_$seoId');
     if (dateString != null) {
       setState(() {
         _selectedFollowUpDate = DateTime.parse(dateString);
@@ -2349,9 +2484,9 @@ class _DetailScreenState extends State<DetailScreen>
     }
   }
 
-  Future<void> _loadFollowUpDate(String userName) async {
+  Future<void> _loadFollowUpDate(String seoId) async {
     final prefs = await SharedPreferences.getInstance();
-    String? dateString = prefs.getString('follow_up_date_$userName');
+    String? dateString = prefs.getString('follow_up_date_$seoId');
 
     // Wrap the state update in a microtask to ensure the UI rebuilds immediately.
     Future.microtask(() {
@@ -2370,58 +2505,82 @@ class _DetailScreenState extends State<DetailScreen>
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Send Message'),
+          title: Center(child: Text('Send Message',style: TextStyle(fontFamily: 'Poppins',fontWeight: FontWeight.w500,fontSize: 20,color: Colors.blue.shade900))),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10.0),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              ListTile(
-                leading: Icon(
-                  Icons.textsms_outlined,
-                  color: Colors.lightBlueAccent,
+              Container(
+                decoration: BoxDecoration(color: Colors.blue.shade900,
+                    borderRadius: BorderRadius.circular(15)),
+                child: ListTile(
+                  leading: Icon(
+                    Icons.textsms_outlined,
+                    color: Colors.lightBlueAccent,
+                  ),
+                  title: Text(
+                    'Send via Text',
+                    style: TextStyle(color: Colors.white,fontFamily: 'Poppins'),
+                  ),
+                  onTap: () {
+                    String message = _messageController.text;
+                    _sendSMS(
+                        context,
+                        message,
+                        widget.lead['phone_number']
+                            .replaceFirst('p:', '')
+                            .replaceFirst('+91', ''));
+                    Navigator.pop(context);
+                  },
                 ),
-                title: Text(
-                  'Send via Text',
-                  style: TextStyle(color: Colors.blue.shade900),
-                ),
-                onTap: () {
-                  String message = _messageController.text;
-                  _sendSMS(context, message, widget.data?['phone']);
-                  Navigator.pop(context);
-                },
               ),
-              ListTile(
-                leading: Icon(
-                  FontAwesomeIcons.whatsapp,
-                  color: Colors.green,
+              SizedBox(height: 10,),
+              Container(
+                decoration: BoxDecoration(color: Colors.blue.shade900,
+                    borderRadius: BorderRadius.circular(15)),
+                child: ListTile(
+                  leading: Icon(
+                    FontAwesomeIcons.whatsapp,
+                    color: Colors.green,
+                  ),
+                  title: Text(
+                    'Send via Whatsapp',
+                    style: TextStyle(color: Colors.white,fontFamily: 'Poppins'),
+                  ),
+                  onTap: () {
+                    String message = _messageController.text;
+                    _sendWhatsAppMessage(
+                        context,
+                        message,
+                        widget.lead['phone_number']
+                            .replaceFirst('p:', '')
+                            .replaceFirst('+91', ''));
+                    Navigator.pop(context);
+                  },
                 ),
-                title: Text(
-                  'Send via Whatsapp',
-                  style: TextStyle(color: Colors.blue.shade900),
-                ),
-                onTap: () {
-                  String message = _messageController.text;
-                  _sendWhatsAppMessage(context, message, widget.data?['phone']);
-                  Navigator.pop(context);
-                },
               ),
-              ListTile(
-                leading: Icon(
-                  Icons.email_outlined,
-                  color: Colors.red,
+              SizedBox(height: 10,),
+              Container(
+                decoration: BoxDecoration(color: Colors.blue.shade900,
+                    borderRadius: BorderRadius.circular(15)),
+                child: ListTile(
+                  leading: Icon(
+                    Icons.email_outlined,
+                    color: Colors.red,
+                  ),
+                  title: Text(
+                    'Send via Email',
+                    style: TextStyle(color: Colors.white,fontFamily: 'Poppins'),
+                  ),
+                  onTap: () {
+                    String title = _titleController.text;
+                    String message = _messageController.text;
+                    _sendEmail(context, title, message, widget.lead['email']);
+                    Navigator.pop(context);
+                  },
                 ),
-                title: Text(
-                  'Send via Email',
-                  style: TextStyle(color: Colors.blue.shade900),
-                ),
-                onTap: () {
-                  String title = _titleController.text;
-                  String message = _messageController.text;
-                  _sendEmail(context, title, message, widget.data?['email']);
-                  Navigator.pop(context);
-                },
               ),
             ],
           ),
@@ -2488,109 +2647,118 @@ class _DetailScreenState extends State<DetailScreen>
     }
   }
 
-  Future<void> _sendWhatsAppMessage(BuildContext context, String message, String recipient) async {bool fileSelected = _filePath != null && _filePath!.isNotEmpty;
+  Future<void> _sendWhatsAppMessage(BuildContext context, String message, String recipient) async {
+    bool fileSelected = _filePath != null && _filePath!.isNotEmpty;
 
-  // If a file is selected, share the file along with the message
-  if (fileSelected) {
-    try {
-      // Convert the file path to an XFile
-      XFile xFile = XFile(_filePath!);
+    // If a file is selected, share the file along with the message
+    if (fileSelected) {
+      try {
+        // Convert the file path to an XFile
+        XFile xFile = XFile(_filePath!);
 
-      // Use Share.shareXFiles to share the file along with the message
-      await Share.shareXFiles(
-        [xFile], // Pass the XFile as a list
-        text: message.isNotEmpty
-            ? message
-            : null, // Share the message if it's not empty
-      );
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('File and message shared successfully!')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to share file and message: $e')),
-      );
-    }
-  }
-
-  // Send only the message via WhatsApp if it's present
-  if (message.isNotEmpty) {
-    final Uri whatsappUri = Uri(
-      scheme: 'https',
-      host: 'wa.me',
-      path: recipient,
-      queryParameters: {
-        'text': message, // The message to send
-      },
-    );
-
-    try {
-      if (await canLaunchUrl(whatsappUri)) {
-        await launchUrl(whatsappUri);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Message sent through WhatsApp!')),
+        // Use Share.shareXFiles to share the file along with the message
+        await Share.shareXFiles(
+          [xFile], // Pass the XFile as a list
+          text: message.isNotEmpty
+              ? message
+              : null, // Share the message if it's not empty
         );
-      } else {
+
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to send message via WhatsApp.')),
+          SnackBar(content: Text('File and message shared successfully!')),
         );
-        throw 'Could not launch WhatsApp';
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to share file and message: $e')),
+        );
       }
-    } catch (e) {
+    }
+
+    // Send only the message via WhatsApp if it's present
+    if (message.isNotEmpty) {
+      final Uri whatsappUri = Uri(
+        scheme: 'https',
+        host: 'wa.me',
+        path: recipient,
+        queryParameters: {
+          'text': message, // The message to send
+        },
+      );
+
+      try {
+        if (await canLaunchUrl(whatsappUri)) {
+          await launchUrl(whatsappUri);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Message sent through WhatsApp!')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to send message via WhatsApp.')),
+          );
+          throw 'Could not launch WhatsApp';
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to send message: $e')),
+        );
+      }
+    }
+
+    // Handle the case where neither file nor message is present
+    if (!fileSelected && message.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to send message: $e')),
+        SnackBar(content: Text('No file or message to send.')),
       );
     }
-  }
-
-  // Handle the case where neither file nor message is present
-  if (!fileSelected && message.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('No file or message to send.')),
-    );
-  }
   }
 
   Future<void> _sendEmail(BuildContext context, String subject, String message,
-      String recipient) async {if (_filePath != null && _filePath!.isNotEmpty) {
-    // Attach the file and send email
-    try {
-      await Share.shareXFiles(
-        [XFile(_filePath!)], // File path as a list of XFile
-        subject: subject,
-        text: message,
-      );
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('File and message shared via Email!')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('Failed to share file and message via Email: $e')),
-      );
-      print('Error: $e');
-    }
-  } else {
-    // If no file is selected, send only the email with subject and message
-    final Uri emailUri = Uri(
-      scheme: 'mailto',
-      path: widget.data?['email'],
-      query: Uri.encodeFull('subject=$subject&body=$message'),
-    );
-
-    if (await canLaunchUrl(emailUri)) {
-      await launchUrl(emailUri);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Message sent through Email!')),
-      );
+      String recipient) async {
+    if (_filePath != null && _filePath!.isNotEmpty) {
+      // Attach the file and send email
+      try {
+        await Share.shareXFiles(
+          [XFile(_filePath!)], // File path as a list of XFile
+          subject: subject,
+          text: message,
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('File and message shared via Email!')),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Failed to share file and message via Email: $e')),
+        );
+        print('Error: $e');
+      }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to open email client.')),
+      // If no file is selected, send only the email with subject and message
+      final Uri emailUri = Uri(
+        scheme: 'mailto',
+        path: widget.lead['email'] ?? 'No email',
+        query: Uri.encodeFull('subject=$subject&body=$message'),
       );
-      throw 'Could not launch email client';
+
+      if (await canLaunchUrl(emailUri)) {
+        await launchUrl(emailUri);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Message sent through Email!')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to open email client.')),
+        );
+        throw 'Could not launch email client';
+      }
     }
   }
+
+  String formatDate(String dateTimeString) {
+    DateTime parsedDate = DateTime.parse(dateTimeString);
+    // Use DateFormat to format the date as 'yyyy-MM-dd' or any other format you prefer
+    String formattedDate = DateFormat('MM/dd/yyyy').format(parsedDate);
+    return formattedDate;
   }
 
   @override
@@ -2613,40 +2781,28 @@ class _DetailScreenState extends State<DetailScreen>
         Scaffold(
           backgroundColor: Colors.transparent,
           appBar: AppBar(
-              backgroundColor: Colors.white,
-              automaticallyImplyLeading: false,
-              elevation: 5,
-              toolbarHeight: 50,
-              toolbarOpacity: 0.7,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.only(
-                  bottomRight: Radius.circular(25),
-                  bottomLeft: Radius.circular(25),
+            backgroundColor: Colors.white,
+            automaticallyImplyLeading: false,
+            elevation: 5,
+            toolbarHeight: 50,
+            toolbarOpacity: 0.7,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.only(
+                bottomRight: Radius.circular(25),
+                bottomLeft: Radius.circular(25),
+              ),
+            ),
+            title:  FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                'Paid-Leads',
+                style: TextStyle(
+                  fontSize: 24, fontFamily: 'Poppins',
+                  fontWeight: FontWeight.bold, color: Colors.blue[900],
                 ),
               ),
-              title: Row(
-                children: 'Leads'.split('').map((letter) {
-                  int fontSize = 40 - 'Leads'.indexOf(letter) * 4;
-                  return Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 2.0),
-                    child: Text(
-                      letter,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: fontSize.toDouble(),
-                        color: Colors.blue.shade900,
-                        shadows: [
-                          Shadow(
-                            offset: Offset(1.0, 1.0),
-                            blurRadius: 2.0,
-                            color: Colors.black.withOpacity(0.5),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }).toList(),
-              )),
+            )
+          ),
           body: Padding(
             padding: const EdgeInsets.all(8.0),
             child: Container(
@@ -2659,13 +2815,15 @@ class _DetailScreenState extends State<DetailScreen>
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          " ${widget.data?['name'] ?? ''}",
-                          style: const TextStyle(
-                              fontSize: 20,
-                              fontFamily:
-                              'Poppins', // Reference the family name here
-                              fontWeight: FontWeight.bold),
+                        Expanded(
+                          child: Text(
+                            " ${widget.lead['full_name'] ?? 'Unknown'}",
+                            style: const TextStyle(
+                                fontSize: 20,
+                                fontFamily:
+                                    'Poppins', // Reference the family name here
+                                fontWeight: FontWeight.bold),
+                          ),
                         ),
                         GestureDetector(
                             onTap: () {
@@ -2688,37 +2846,37 @@ class _DetailScreenState extends State<DetailScreen>
                         },
                         child: isVisible
                             ? Container(
-                            height: 40,
-                            width: MediaQuery.of(context).size.width,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(15),
-                              color: Colors.blue.shade900,
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8.0),
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Row(
-                                  mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      widget.data?['contact'].toUpperCase(),
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontFamily: 'Poppins',
-                                      ),
-                                    ),
-                                    Icon(
-                                      Icons.arrow_downward_sharp,
-                                      color: Colors.white,
-                                    )
-                                  ],
+                                height: 40,
+                                width: MediaQuery.of(context).size.width,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(15),
+                                  color: Colors.blue.shade900,
                                 ),
-                              ),
-                            ))
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8.0),
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          widget.lead['contact'].toUpperCase(),
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: 'Poppins',
+                                          ),
+                                        ),
+                                        Icon(
+                                          Icons.arrow_downward_sharp,
+                                          color: Colors.white,
+                                        )
+                                      ],
+                                    ),
+                                  ),
+                                ))
                             : Container()),
                     const SizedBox(height: 10),
                     GestureDetector(
@@ -2753,29 +2911,27 @@ class _DetailScreenState extends State<DetailScreen>
                               ),
                             ),
                             const SizedBox(width: 10),
-                            _userGroupNames.isNotEmpty
+                            groups.isNotEmpty
                                 ? Expanded(
                               child: SingleChildScrollView(
                                 scrollDirection: Axis.horizontal,
                                 child: Row(
-                                  children:
-                                  _userGroupNames.map((groupName) {
+                                  children: groups.map((groupName) { // Use groupName directly as it's a string
                                     return Container(
-                                      margin: EdgeInsets.symmetric(
-                                          horizontal: 4.0),
+                                      margin: const EdgeInsets.symmetric(horizontal: 4.0),
                                       height: 30,
-                                      width: 60,
+                                      padding: const EdgeInsets.symmetric(horizontal: 12.0),
                                       decoration: BoxDecoration(
                                         color: Colors.blue.shade900,
-                                        borderRadius:
-                                        BorderRadius.circular(15),
+                                        borderRadius: BorderRadius.circular(15),
                                       ),
                                       child: Center(
                                         child: Text(
-                                          '$groupName',
-                                          style: TextStyle(
+                                          groupName, // Directly use the group name string
+                                          style: const TextStyle(
                                             color: Colors.white,
                                             fontFamily: 'Poppins',
+                                            fontSize: 14.0,
                                           ),
                                         ),
                                       ),
@@ -2792,9 +2948,9 @@ class _DetailScreenState extends State<DetailScreen>
                     const SizedBox(height: 10),
                     GestureDetector(
                       onTap: () {
-                        String username = widget.data?['name'] ?? '';
-                        String uniqueId = widget.data?['project_unique_code'] ?? '';
-                        String seoId = widget.data?['seo_id'] ?? '';
+                        String username = widget.lead['name'] ?? '';
+                        String uniqueId = widget.lead['campaign_id'] ?? '';
+                        String seoId = widget.lead['paid_id'] ?? '';
 
                         // Call _followUpBottomSheet with the necessary parameters
                         _followUpBottomSheet(
@@ -2802,7 +2958,7 @@ class _DetailScreenState extends State<DetailScreen>
                           username,
                           uniqueId,
                           seoId,
-                              (selectedDate) {
+                          (selectedDate) {
                             setState(() {
                               _selectedFollowUpDate =
                                   selectedDate; // Update the state with the selected date
@@ -2830,32 +2986,36 @@ class _DetailScreenState extends State<DetailScreen>
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.event_available_rounded, size: 20.0, color: Colors.black),
+                            const Icon(Icons.event_available_rounded,
+                                size: 20.0, color: Colors.black),
                             const SizedBox(width: 8.0),
 
                             // Check if _selectedFollowUpDate is not null
                             _selectedFollowUpDate != null
                                 ? Text(
-                              'FOLLOW UP: ${DateFormat('dd/MM/yyyy').format(_selectedFollowUpDate!)}',
-                              style: const TextStyle(color: Colors.black, fontFamily: 'Poppins'),
-                            )
-                                : widget.data?['followup'] != null && widget.data!['followup'].isNotEmpty
-                                ? Text(
-                              'FOLLOW UP: ${_formatFollowUpDate(widget.data!['followup'])}',
-                              style: const TextStyle(color: Colors.black, fontFamily: 'Poppins'),
-                            )
-                                : Text(
-                              'No follow up date selected',
-                              style: TextStyle(
-                                fontSize: 15,
-                                color: Colors.red,
-                                fontFamily: 'Poppins',
-                              ),
-                            ),
+                                    'FOLLOW UP: ${DateFormat('dd/MM/yyyy').format(_selectedFollowUpDate!)}',
+                                    style: const TextStyle(
+                                        color: Colors.black,
+                                        fontFamily: 'Poppins'),
+                                  )
+                                : widget.lead['followup'] != null &&
+                                        widget.lead['followup'].isNotEmpty
+                                    ? Text(
+                                        'FOLLOW UP: ${_formatFollowUpDate(widget.lead['followup'])}',
+                                        style: const TextStyle(
+                                            color: Colors.black,
+                                            fontFamily: 'Poppins'),
+                                      )
+                                    : Text(
+                                        'No follow up date selected',
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          color: Colors.red,
+                                          fontFamily: 'Poppins',
+                                        ),
+                                      ),
                           ],
                         ),
-
-
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -2881,7 +3041,7 @@ class _DetailScreenState extends State<DetailScreen>
                           const Icon(Icons.person,
                               size: 20.0, color: Colors.black),
                           const SizedBox(width: 8.0),
-                          Text('${widget.data?['name'] ?? ''}',
+                          Text('${widget.lead['full_name'] ?? 'Unknown'}',
                               style: const TextStyle(
                                 fontSize: 15.0,
                                 color: Colors.black,
@@ -2915,7 +3075,7 @@ class _DetailScreenState extends State<DetailScreen>
                             const Icon(Icons.email,
                                 size: 20.0, color: Colors.black),
                             const SizedBox(width: 8.0),
-                            Text('${widget.data?['email'] ?? ''}',
+                            Text('${widget.lead['email'] ?? 'Unknown'}',
                                 style: const TextStyle(
                                   fontSize: 15.0,
                                   color: Colors.black,
@@ -2948,7 +3108,10 @@ class _DetailScreenState extends State<DetailScreen>
                           const Icon(Icons.phone,
                               size: 20.0, color: Colors.black),
                           const SizedBox(width: 8.0),
-                          Text('${widget.data?['phone'] ?? ''}',
+                          Text(
+                              widget.lead['phone_number']
+                                      .replaceAll(RegExp(r'[^0-9]'), '') ??
+                                  'No phone',
                               style: const TextStyle(
                                 fontSize: 15.0,
                                 color: Colors.black,
@@ -2981,10 +3144,7 @@ class _DetailScreenState extends State<DetailScreen>
                               size: 20.0, color: Colors.black),
                           const SizedBox(width: 8.0),
                           Text(
-                            DateFormat('dd/MM/yyyy').format(DateTime.parse(
-                                widget.data?['added_date'] ??
-                                    widget.data?['created_date'] ??
-                                    '')),
+                            '${formatDate(widget.lead['created_at'])}',
                             style: const TextStyle(
                               fontSize: 15.0,
                               color: Colors.black,
@@ -3017,7 +3177,7 @@ class _DetailScreenState extends State<DetailScreen>
                           const Icon(Icons.assignment,
                               size: 20.0, color: Colors.black),
                           const SizedBox(width: 8.0),
-                          Text('${widget.data?['project_name'] ?? ''}',
+                          Text('${widget.lead['project_name'] ?? 'Unknown'}',
                               style: const TextStyle(
                                 fontSize: 15.0,
                                 color: Colors.black,
@@ -3055,10 +3215,10 @@ class _DetailScreenState extends State<DetailScreen>
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.domain,
+                          const Icon(FontAwesomeIcons.ad,
                               size: 20.0, color: Colors.black),
                           const SizedBox(width: 8.0),
-                          Text('${widget.data?['domain'] ?? ''}',
+                          Text('${widget.lead['ad_name'] ?? 'Unknown'}',
                               style: const TextStyle(
                                 fontSize: 15.0,
                                 color: Colors.black,
@@ -3089,10 +3249,10 @@ class _DetailScreenState extends State<DetailScreen>
                         scrollDirection: Axis.horizontal,
                         child: Row(
                           children: [
-                            const Icon(Icons.link,
+                            Icon(FontAwesomeIcons.flag,
                                 size: 20.0, color: Colors.black),
                             const SizedBox(width: 8.0),
-                            Text('${widget.data?['url'] ?? ''}',
+                            Text('${widget.lead['campaign_name'] ?? 'Unknown'}',
                                 style: const TextStyle(
                                   fontSize: 15.0,
                                   color: Colors.black,
@@ -3102,18 +3262,9 @@ class _DetailScreenState extends State<DetailScreen>
                         ),
                       ),
                     ),
-                    const SizedBox(height: 18.0),
-                    const Text(
-                      'Message',
-                      style: TextStyle(
-                        fontSize: 20.0,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Poppins',
-                      ),
-                    ),
-                    const SizedBox(height: 16.0),
+                    const SizedBox(height: 8.0),
                     Container(
-                      // height: 120,
+                      height: 50,
                       width: 360,
                       padding: const EdgeInsets.symmetric(
                           vertical: 8.0, horizontal: 12.0),
@@ -3130,50 +3281,43 @@ class _DetailScreenState extends State<DetailScreen>
                         ],
                       ),
                       child: SingleChildScrollView(
-                        child: Text('${widget.data?['message'] ?? ''}',
-                            style: const TextStyle(
-                              fontSize: 15.0,
-                              color: Colors.black,
-                              fontFamily: 'Poppins',
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            Icon(
+                                widget.lead['platform'] == 'fb'
+                                    ? FontAwesomeIcons.facebook
+                                    : widget.lead['platform'] == 'ig'
+                                        ? FontAwesomeIcons.instagram
+                                        : widget.lead['platform'] == 'Website'
+                                            ? FontAwesomeIcons
+                                                .earthAmericas // Icon for website
+                                    : widget.lead['platform'] == 'Google Ads'
+                                    ? FontAwesomeIcons
+                                    .google
+                                            : Icons
+                                                .help_outline, // Default icon if platform is not recognized
+                                size: 20.0,
+                                color: Colors.black),
+                            const SizedBox(width: 8.0),
+                            Text(
+                              widget.lead['platform'] == 'fb'
+                                  ? 'Facebook'
+                                  : widget.lead['platform'] == 'ig'
+                                      ? 'Instagram'
+                                      : widget.lead['platform'] == 'Website'
+                                          ? 'Website'
+                              : widget.lead['platform'] == 'Google Ads'
+                            ? 'Google Ads'
+                                          : 'Unknown', // Default text if platform is not recognized
+                              style: const TextStyle(
+                                fontSize: 15.0,
+                                color: Colors.black,
+                                fontFamily: 'Poppins',
+                              ),
                             ),
-                            textAlign: TextAlign.justify),
-                      ),
-                    ),
-                    const SizedBox(height: 10.0),
-                    const Text(
-                      'Comments',
-                      style: TextStyle(
-                        fontSize: 20.0,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Poppins',
-                      ),
-                    ),
-                    const SizedBox(height: 16.0),
-                    Container(
-                      // height: 120,
-                      width: 360,
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 8.0, horizontal: 12.0),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(30),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.5),
-                            spreadRadius: 2,
-                            blurRadius: 5,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: SingleChildScrollView(
-                        child: Text('${widget.data?['comments'] ?? ''}',
-                            style: const TextStyle(
-                              fontSize: 15.0,
-                              color: Colors.black,
-                              fontFamily: 'Poppins',
-                            ),
-                            textAlign: TextAlign.justify),
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(height: 10.0),
@@ -3222,9 +3366,9 @@ class _DetailScreenState extends State<DetailScreen>
                             ),
                             TextField(
                               controller:
-                              _titleController, // A TextEditingController to manage the input
+                                  _titleController, // A TextEditingController to manage the input
                               maxLines:
-                              null, // Allows the message to be multi-line
+                                  null, // Allows the message to be multi-line
                               decoration: InputDecoration(
                                 hintText: "Enter title",
                                 hintStyle: TextStyle(
@@ -3254,9 +3398,9 @@ class _DetailScreenState extends State<DetailScreen>
                             ),
                             TextField(
                               controller:
-                              _messageController, // A TextEditingController to manage the input
+                                  _messageController, // A TextEditingController to manage the input
                               maxLines:
-                              null, // Allows the message to be multi-line
+                                  null, // Allows the message to be multi-line
                               decoration: InputDecoration(
                                 hintText: "Write a message...",
                                 hintStyle: TextStyle(
@@ -3324,30 +3468,32 @@ class _DetailScreenState extends State<DetailScreen>
             children: [
               IconButton(
                 onPressed: () {
-                  launch('tel:${widget.data?['phone'] ?? ''}');
+                  launch(
+                      'tel:${widget.lead['phone_number']?.replaceAll('p:', '') ?? 'No phone'}');
                 },
                 icon: const Icon(Icons.call),
                 color: Colors.green,
               ),
               IconButton(
                 onPressed: () {
-                  launch('sms:${widget.data?['phone'] ?? ''}');
+                  launch(
+                      'sms:${widget.lead['phone_number']?.replaceAll('p:', '') ?? 'No phone'}');
                 },
                 icon: const Icon(Icons.message),
                 color: Colors.green,
               ),
-              if (widget.data?['email'] != null &&
-                  widget.data?['email'].isNotEmpty)
+              if (widget.lead['email'].isNotEmpty)
                 IconButton(
                   onPressed: () {
-                    launch('mailto:${widget.data?['email'] ?? ''}');
+                    launch('mailto:${widget.lead['email'] ?? ''}');
                   },
                   icon: const Icon(Icons.email),
                   color: Colors.green,
                 ),
               IconButton(
                 onPressed: () async {
-                  final phoneNumber = widget.data?['phone'] ?? '';
+                  final phoneNumber =
+                      widget.lead['phone_number']?.replaceAll('p:', '') ?? '';
                   final whatsappUrl = 'https://wa.me/$phoneNumber';
                   final whatsappInstalled = await canLaunch(whatsappUrl);
                   if (whatsappInstalled) {
@@ -3356,7 +3502,7 @@ class _DetailScreenState extends State<DetailScreen>
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content:
-                        Text('WhatsApp is not installed on your device.'),
+                            Text('WhatsApp is not installed on your device.'),
                       ),
                     );
                   }
@@ -3411,13 +3557,13 @@ class CircularDashboardCard extends StatelessWidget {
             SizedBox(height: 1),
             count is int
                 ? Text(
-              count.toString(),
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            )
+                    count.toString(),
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  )
                 : count,
           ],
         ),

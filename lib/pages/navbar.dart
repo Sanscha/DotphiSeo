@@ -120,12 +120,13 @@ class _NavBarScreenState extends State<NavBarScreen> {
                 color: Colors.blue.shade900,
                 gap: 8, // Reduced gap between icons
                 activeColor: Colors.white,
+                curve: Curves.easeIn,
                 tabBackgroundColor: Colors.blue.shade900,
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), // Reduced padding
                 tabs: const [
                   GButton(
                     icon: Icons.home,
-                    text: 'Home',
+                    // text: 'Home',
                     iconSize: 22, // Smaller icon size
                     textStyle: TextStyle(
                       fontFamily: 'Poppins',
@@ -135,7 +136,7 @@ class _NavBarScreenState extends State<NavBarScreen> {
                   ),
                   GButton(
                     icon: Icons.leaderboard,
-                    text: 'Leads',
+                    // text: 'Leads',
                     iconSize: 22,
                     textStyle: TextStyle(
                       fontFamily: 'Poppins',
@@ -145,7 +146,7 @@ class _NavBarScreenState extends State<NavBarScreen> {
                   ),
                   GButton(
                     icon: Icons.attach_money,
-                    text: 'Paid-Leads',
+                    // text: 'Paid-Leads',
                     iconSize: 22,
                     textStyle: TextStyle(
                       fontFamily: 'Poppins',
@@ -155,7 +156,7 @@ class _NavBarScreenState extends State<NavBarScreen> {
                   ),
                   GButton(
                     icon: Icons.screen_search_desktop_outlined,
-                    text: 'Search-Console',
+                    // text: 'Search-Console',
                     iconSize: 22,
                     textStyle: TextStyle(
                       fontFamily: 'Poppins',
@@ -165,7 +166,7 @@ class _NavBarScreenState extends State<NavBarScreen> {
                   ),
                   GButton(
                     icon: Icons.key,
-                    text: 'Keywords',
+                    // text: 'Keywords',
                     iconSize: 22,
                     textStyle: TextStyle(
                       fontFamily: 'Poppins',
@@ -175,7 +176,7 @@ class _NavBarScreenState extends State<NavBarScreen> {
                   ),
                   GButton(
                     icon: Icons.person,
-                    text: 'Profile',
+                    // text: 'Profile',
                     iconSize: 22,
                     textStyle: TextStyle(
                       fontFamily: 'Poppins',

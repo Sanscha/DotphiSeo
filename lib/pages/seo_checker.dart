@@ -6,6 +6,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'Seo/websitedetails_screen.dart';
+import 'facebooklogin.dart';
 
 class SignInScreen extends StatefulWidget {
   @override
@@ -775,43 +776,23 @@ class _SignInScreenState extends State<SignInScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          children: List.generate('Search Console'.length, (index) {
-            // Calculate font size based on the index
-            double fontSize =
-                30 - index * 1.0; // Adjust base size and decrement as needed
-
-            // Ensure the font size does not become too small
-            fontSize = fontSize < 12.0 ? 12.0 : fontSize; // Minimum font size
-
-            // Get the letter at the current index
-            String letter = 'Search Console'[index];
-
-            // Skip the font size calculation for spaces
-            if (letter.trim().isEmpty) {
-              return SizedBox(width: 4.0); // Adjust space width as needed
-            }
-
-            return Padding(
-              padding: EdgeInsets.symmetric(
-                  horizontal: 0.0), // Adjust padding if needed
-              child: Text(
-                letter,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: fontSize,
-                  color: Colors.blue.shade900,
-                  shadows: [
-                    Shadow(
-                      offset: Offset(1.0, 1.0),
-                      blurRadius: 2.0,
-                      color: Colors.black.withOpacity(0.5),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }),
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 8.0),
+          child: Image.asset('assets/images/report.png',
+            height: 10,
+            width: 10,),
+        ),
+        title:  FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            'Search Console',
+            style: TextStyle(
+            fontSize: 20,  // Reduced font size to fit better
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.bold,
+            color: Colors.blue[900],
+          ),
+          ),
         ),
         actions: [
           if (_user != null)
@@ -835,18 +816,23 @@ class _SignInScreenState extends State<SignInScreen> {
         ),
         child: Center(
           child: _user == null
-              ? ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue.shade900),
-                  onPressed: _signInWithGoogle,
-                  child: Text(
-                    'Sign in to Google Search Console',
-                    style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white),
-                  ),
-                )
+              ? Column(
+                children: [
+                  ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue.shade900),
+                      onPressed: _signInWithGoogle,
+                      child: Text(
+                        'Sign in to Google Search Console',
+                        style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white),
+                      ),
+                    ),
+                  FacebookLoginButton(onLoginSuccess: (String accessToken) {  },)
+                ],
+              )
               : Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

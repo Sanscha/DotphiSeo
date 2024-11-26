@@ -108,28 +108,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
               //       },
               //     ),
               //   ],
-              title: Row(
-                children: 'Profile'.split('').map((letter) {
-                  int fontSize = 30 - 'Profile'.indexOf(letter) * 2;
-                  return Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 2.0),
-                    child: Text(
-                      letter,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: fontSize.toDouble(),
-                        color: Colors.blue.shade900,
-                        shadows: [
-                          Shadow(
-                            offset: Offset(1.0, 1.0),
-                            blurRadius: 2.0,
-                            color: Colors.black.withOpacity(0.5),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }).toList(),
+                leading:Padding(
+                  padding: const EdgeInsets.only(left: 8.0),
+                  child: Image.asset('assets/images/profile.png',
+                  height: 10,
+                  width: 10,),
+                ),
+              title:  Text(
+                'Profile',
+                style: TextStyle(
+                  fontSize: 20,  // Reduced font size to fit better
+                  fontFamily: 'Poppins',
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue[900],
+                ),
               )
             ),
             body: user == null

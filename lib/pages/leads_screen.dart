@@ -343,7 +343,8 @@ class _ApiScreenState extends State<ApiScreen> {
         prefs.setBool('isLoggedIn', true);
         final data = jsonData['data'] as List<dynamic>;
         campaignId = data[0]['campaign_id'].toString();
-        final uniqueCodes = data.map((item) => item['project_unique_code'].toString()).toList();
+        final uniqueCodes =
+            data.map((item) => item['project_unique_code'].toString()).toList();
         return uniqueCodes;
       }
     }
@@ -406,8 +407,10 @@ class _ApiScreenState extends State<ApiScreen> {
         if (leadResponse.statusCode == 200) {
           final leadResponseData = jsonDecode(leadResponse.body);
 
-          if (leadResponseData['data'] != null && leadResponseData['data'].isNotEmpty) {
-            final leadData = List<Map<String, dynamic>>.from(leadResponseData['data']);
+          if (leadResponseData['data'] != null &&
+              leadResponseData['data'].isNotEmpty) {
+            final leadData =
+                List<Map<String, dynamic>>.from(leadResponseData['data']);
 
             setState(() {
               apiData.addAll(leadData);
@@ -416,7 +419,8 @@ class _ApiScreenState extends State<ApiScreen> {
             print('No lead data found for project code: $selectedProjectCode');
           }
         } else {
-          print('Lead API request failed with status code: ${leadResponse.statusCode}');
+          print(
+              'Lead API request failed with status code: ${leadResponse.statusCode}');
         }
 
         // Second API call
@@ -431,17 +435,21 @@ class _ApiScreenState extends State<ApiScreen> {
         if (liveChatResponse.statusCode == 200) {
           final liveChatResponseData = jsonDecode(liveChatResponse.body);
 
-          if (liveChatResponseData['data'] != null && liveChatResponseData['data'].isNotEmpty) {
-            final liveChatData = List<Map<String, dynamic>>.from(liveChatResponseData['data']);
+          if (liveChatResponseData['data'] != null &&
+              liveChatResponseData['data'].isNotEmpty) {
+            final liveChatData =
+                List<Map<String, dynamic>>.from(liveChatResponseData['data']);
 
             setState(() {
               apiData.addAll(liveChatData);
             });
           } else {
-            print('No live chat data found for project code: $selectedProjectCode');
+            print(
+                'No live chat data found for project code: $selectedProjectCode');
           }
         } else {
-          print('Live Chat API request failed with status code: ${liveChatResponse.statusCode}');
+          print(
+              'Live Chat API request failed with status code: ${liveChatResponse.statusCode}');
         }
 
         // Sort combined data by date (descending)
@@ -449,8 +457,12 @@ class _ApiScreenState extends State<ApiScreen> {
           sortedData = List<Map<String, dynamic>>.from(apiData);
 
           sortedData.sort((a, b) {
-            final dateA = DateTime.tryParse(a['added_date'] ?? a['created_date']) ?? DateTime(1970);
-            final dateB = DateTime.tryParse(b['added_date'] ?? b['created_date']) ?? DateTime(1970);
+            final dateA =
+                DateTime.tryParse(a['added_date'] ?? a['created_date']) ??
+                    DateTime(1970);
+            final dateB =
+                DateTime.tryParse(b['added_date'] ?? b['created_date']) ??
+                    DateTime(1970);
 
             return dateB.compareTo(dateA); // Descending order
           });
@@ -490,13 +502,13 @@ class _ApiScreenState extends State<ApiScreen> {
         print(
             'Lead Response Data: $leadResponseData'); // Print the lead response data
         List<Map<String, dynamic>> leadData =
-        List<Map<String, dynamic>>.from(leadResponseData['data']);
+            List<Map<String, dynamic>>.from(leadResponseData['data']);
 
         // Add a source and gif_path field to each item in the lead data
         for (var item in leadData) {
           item['source'] = 'lead'; // Mark as lead
           item['gif_path'] =
-          'assets/images/email.gif'; // Set the GIF path for lead data
+              'assets/images/email.gif'; // Set the GIF path for lead data
         }
 
         combinedData.addAll(leadData);
@@ -516,13 +528,13 @@ class _ApiScreenState extends State<ApiScreen> {
         print(
             'Live Chat Response Data: $liveChatResponseData'); // Print the live chat response data
         List<Map<String, dynamic>> liveChatData =
-        List<Map<String, dynamic>>.from(liveChatResponseData['data']);
+            List<Map<String, dynamic>>.from(liveChatResponseData['data']);
 
         // Add a source and gif_path field to each item in the live chat data
         for (var item in liveChatData) {
           item['source'] = 'livechat'; // Mark as livechat
           item['gif_path'] =
-          'assets/images/chatleads.gif'; // Set the GIF path for live chat data
+              'assets/images/chatleads.gif'; // Set the GIF path for live chat data
         }
 
         combinedData.addAll(liveChatData);
@@ -564,7 +576,6 @@ class _ApiScreenState extends State<ApiScreen> {
     }
   }
 
-
   void checkFollowUpNotifications() {
     final today = DateTime.now();
 
@@ -576,15 +587,16 @@ class _ApiScreenState extends State<ApiScreen> {
           try {
             followUpDate = DateFormat('dd-MM-yyyy').parse(item['followup']);
           } catch (e) {
-            followUpDate = DateFormat('yyyy-MM-dd').parse(item['followup']); // Fallback format
+            followUpDate = DateFormat('yyyy-MM-dd')
+                .parse(item['followup']); // Fallback format
           }
 
           if (isSameDate(today, followUpDate)) {
             showInAppNotification(
               title: 'Follow-up Reminder',
               message: 'Follow-up scheduled for today',
-              projectUniqueCode:widget.selectedProjectCode,
-              campaignId:campaignId!,
+              projectUniqueCode: widget.selectedProjectCode,
+              campaignId: campaignId!,
             );
           }
         } catch (e) {
@@ -594,14 +606,11 @@ class _ApiScreenState extends State<ApiScreen> {
     }
   }
 
-
   bool isSameDate(DateTime date1, DateTime date2) {
     return date1.year == date2.year &&
         date1.month == date2.month &&
         date1.day == date2.day;
   }
-
-
 
   void sortByDate() {
     sortedData.sort((a, b) {
@@ -732,7 +741,8 @@ class _ApiScreenState extends State<ApiScreen> {
     });
 
     final Uri leadUrl = Uri.parse('https://clients.dotphi.com/Api/login/lead');
-    final Uri livechatUrl = Uri.parse('https://clients.dotphi.com/Api/Login/livechat');
+    final Uri livechatUrl =
+        Uri.parse('https://clients.dotphi.com/Api/Login/livechat');
 
     // Fetch lead data
     final leadResponse = await http.post(
@@ -894,7 +904,7 @@ class _ApiScreenState extends State<ApiScreen> {
                     await _fetchProjectUrl(newValue ?? '');
                     await fetchApiDataForSelectedProject();
                     await fetchLeadCounts(projectCode: selectedProjectCode);
-                    },
+                  },
                 ),
                 SizedBox(height: 16),
                 Align(
@@ -1008,163 +1018,164 @@ class _ApiScreenState extends State<ApiScreen> {
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
-            backgroundColor: Colors.white,
-            // elevation: 5,
-            toolbarHeight: 50,
-            toolbarOpacity: 0.7,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.only(
-                bottomRight: Radius.circular(25),
-                bottomLeft: Radius.circular(25),
-              ),
+          backgroundColor: Colors.white,
+          // elevation: 5,
+          toolbarHeight: 50,
+          toolbarOpacity: 0.7,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.only(
+              bottomRight: Radius.circular(25),
+              bottomLeft: Radius.circular(25),
             ),
-            actions: [
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Row(
-                  children: [
-                    ElevatedButton(
-                      onPressed: showProjectPopup,
-                      child: Row(
-                        children: [
-                          Text(
-                            projectUrl != null
-                                ? '$projectUrl'
-                                : 'Select Project',
-                            style: TextStyle(fontSize: 8, color: Colors.white),
-                          ),
-                          SizedBox(
-                            width: 5,
-                          ),
-                          Image.asset(
-                            'assets/images/dl.png',
-                            height: 20,
-                            width: 20,
-                          ),
-                        ],
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        backgroundColor: Colors.blue.shade900,
-                        elevation: 3,
-                        shadowColor: Colors.blue.shade900,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        // Navigate to the notification history screen
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => NotificationHistoryScreen(
-                              user: widget.user,
-                              projectUrl: widget.projectUrl,
-                              selectedProjectCode: widget.selectedProjectCode,
-                            ),
-                          ),
-                        );
-                      },
-                      child: Stack(
-                        children: [
-                          Image.asset(
-                            'assets/images/notification1.gif',
-                            width: 40,
-                            height: 40,
-                          ),
-                          // Positioned(
-                          //   right: 0,
-                          //   top: 0,
-                          //   child: Container(
-                          //     padding: EdgeInsets.all(2),
-                          //     decoration: BoxDecoration(
-                          //       color: Colors.red,
-                          //       borderRadius: BorderRadius.circular(8),
-                          //     ),
-                          //     constraints: BoxConstraints(
-                          //       minWidth: 16,
-                          //       minHeight: 16,
-                          //     ),
-                          //   ),
-                          // ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-            leading: Padding(
-              padding: const EdgeInsets.only(left: 12.0),
-              child: Image.asset('assets/images/Chart.png',
-              height: 15,width: 15,),
-            ),
-            title: FittedBox(
-              fit: BoxFit.scaleDown,
+          ),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.all(8),
               child: Row(
                 children: [
-                  Text(
-                    'Leads',
-                    style:TextStyle(
-                fontSize: 20,  // Reduced font size to fit better
-                fontFamily: 'Poppins',
-                fontWeight: FontWeight.bold,
-                color: Colors.blue[900],
-              ),
+                  ElevatedButton(
+                    onPressed: showProjectPopup,
+                    child: Row(
+                      children: [
+                        Text(
+                          projectUrl != null ? '$projectUrl' : 'Select Project',
+                          style: TextStyle(fontSize: 8, color: Colors.white),
+                        ),
+                        SizedBox(
+                          width: 5,
+                        ),
+                        Image.asset(
+                          'assets/images/dl.png',
+                          height: 20,
+                          width: 20,
+                        ),
+                      ],
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      backgroundColor: Colors.blue.shade900,
+                      elevation: 3,
+                      shadowColor: Colors.blue.shade900,
+                    ),
                   ),
-              // ListTile(
-              //   title: Text("Choose an option:"),
-              //   trailing: DropdownButton<String>(
-              //     value: _selectedItem,
-              //     hint: Row(
-              //       children: [
-              //         Icon(Icons.arrow_drop_down, color: Colors.blue),
-              //         SizedBox(width: 8),
-              //       ],
-              //     ),
-              //     items: [
-              //       DropdownMenuItem(
-              //         value: "Item 1",
-              //         child: Row(
-              //           children: [
-              //             Icon(Icons.star, color: Colors.blue),
-              //             SizedBox(width: 8),
-              //             Text("Item 1"),
-              //           ],
-              //         ),
-              //       ),
-              //       DropdownMenuItem(
-              //         value: "Item 2",
-              //         child: Row(
-              //           children: [
-              //             Icon(Icons.favorite, color: Colors.red),
-              //             SizedBox(width: 8),
-              //             Text("Item 2"),
-              //           ],
-              //         ),
-              //       ),
-              //     ],
-              //     onChanged: (String? newValue) {
-              //       setState(() {
-              //         _selectedItem = newValue;
-              //         if (_selectedItem == "Item 2") {
-              //           // Navigate to another screen if "Item 2" is selected
-              //           Navigator.push(
-              //             context,
-              //             MaterialPageRoute(
-              //               builder: (context) => PaidLeadsScreen(user: widget.user, selectedProjectCode: widget.selectedProjectCode,
-              //                 projectUrl: widget.projectUrl,)
-              //             ),
-              //           );
-              //         }
-              //       });
-              //     },
-              //   ),
-              // ),
+                  GestureDetector(
+                    onTap: () {
+                      // Navigate to the notification history screen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => NotificationHistoryScreen(
+                            user: widget.user,
+                            projectUrl: widget.projectUrl,
+                            selectedProjectCode: widget.selectedProjectCode,
+                          ),
+                        ),
+                      );
+                    },
+                    child: Stack(
+                      children: [
+                        Image.asset(
+                          'assets/images/notification1.gif',
+                          width: 40,
+                          height: 40,
+                        ),
+                        // Positioned(
+                        //   right: 0,
+                        //   top: 0,
+                        //   child: Container(
+                        //     padding: EdgeInsets.all(2),
+                        //     decoration: BoxDecoration(
+                        //       color: Colors.red,
+                        //       borderRadius: BorderRadius.circular(8),
+                        //     ),
+                        //     constraints: BoxConstraints(
+                        //       minWidth: 16,
+                        //       minHeight: 16,
+                        //     ),
+                        //   ),
+                        // ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
+          ],
+          leading: Padding(
+            padding: const EdgeInsets.only(left: 12.0),
+            child: Image.asset(
+              'assets/images/Chart.png',
+              height: 15,
+              width: 15,
+            ),
+          ),
+          title: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              children: [
+                Text(
+                  'Leads',
+                  style: TextStyle(
+                    fontSize: 20, // Reduced font size to fit better
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue[900],
+                  ),
+                ),
+                // ListTile(
+                //   title: Text("Choose an option:"),
+                //   trailing: DropdownButton<String>(
+                //     value: _selectedItem,
+                //     hint: Row(
+                //       children: [
+                //         Icon(Icons.arrow_drop_down, color: Colors.blue),
+                //         SizedBox(width: 8),
+                //       ],
+                //     ),
+                //     items: [
+                //       DropdownMenuItem(
+                //         value: "Item 1",
+                //         child: Row(
+                //           children: [
+                //             Icon(Icons.star, color: Colors.blue),
+                //             SizedBox(width: 8),
+                //             Text("Item 1"),
+                //           ],
+                //         ),
+                //       ),
+                //       DropdownMenuItem(
+                //         value: "Item 2",
+                //         child: Row(
+                //           children: [
+                //             Icon(Icons.favorite, color: Colors.red),
+                //             SizedBox(width: 8),
+                //             Text("Item 2"),
+                //           ],
+                //         ),
+                //       ),
+                //     ],
+                //     onChanged: (String? newValue) {
+                //       setState(() {
+                //         _selectedItem = newValue;
+                //         if (_selectedItem == "Item 2") {
+                //           // Navigate to another screen if "Item 2" is selected
+                //           Navigator.push(
+                //             context,
+                //             MaterialPageRoute(
+                //               builder: (context) => PaidLeadsScreen(user: widget.user, selectedProjectCode: widget.selectedProjectCode,
+                //                 projectUrl: widget.projectUrl,)
+                //             ),
+                //           );
+                //         }
+                //       });
+                //     },
+                //   ),
+                // ),
+              ],
+            ),
+          ),
         ),
         body: Stack(
           children: [
@@ -1333,18 +1344,18 @@ class _ApiScreenState extends State<ApiScreen> {
                       ),
                       SizedBox(height: 20),
                       CustomTabBar(
-                        tabs: ['All Leads','Follow-ups','Groups'],
+                        tabs: ['All Leads', 'Follow-ups', 'Groups'],
                         onTabSelected: (index) {
                           if (index == 0) {
                             // Stay on the same page or do something specific for "All Leads"
-                          } else if(index == 1){
-                            Navigator.push(context,
-                                MaterialPageRoute(builder: (context)=>FollowupScreen(
-                                    projectUniqueCode:selectedProjectCode,
-                                    campaignId:campaignId
-                                )));
-                          }
-                          else {
+                          } else if (index == 1) {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => FollowupScreen(
+                                        projectUniqueCode: selectedProjectCode,
+                                        campaignId: campaignId)));
+                          } else {
                             // Navigate to Groups page
                             Navigator.push(
                               context,
@@ -1509,7 +1520,7 @@ class _ApiScreenState extends State<ApiScreen> {
                                                           launchDialer(phone);
                                                         },
                                                         child: Image.asset(
-                                                        'assets/images/telephone.png',
+                                                          'assets/images/telephone.png',
                                                           width: 25,
                                                           height: 25,
                                                         ),
@@ -1685,7 +1696,9 @@ class _ApiScreenState extends State<ApiScreen> {
                                                           color: Colors.grey,
                                                         ),
                                                       ),
-                                                      SizedBox(height: 10,),
+                                                      SizedBox(
+                                                        height: 10,
+                                                      ),
                                                       Row(
                                                         mainAxisAlignment:
                                                             MainAxisAlignment
@@ -1698,9 +1711,9 @@ class _ApiScreenState extends State<ApiScreen> {
                                                             child: Image.asset(
                                                               'assets/images/user_info.png',
                                                               width:
-                                                              30.0, // Set the width
+                                                                  30.0, // Set the width
                                                               height:
-                                                              30.0, // Set the height
+                                                                  30.0, // Set the height
                                                               fit: BoxFit.cover,
                                                             ),
                                                             onTap: () {
@@ -1711,7 +1724,8 @@ class _ApiScreenState extends State<ApiScreen> {
                                                           SizedBox(width: 30),
                                                           GestureDetector(
                                                             onTap: () {
-                                                              launchDialer(phone);
+                                                              launchDialer(
+                                                                  phone);
                                                             },
                                                             child: Image.asset(
                                                               'assets/images/telephone.png',
@@ -1777,7 +1791,27 @@ class _DetailScreenState extends State<DetailScreen>
   bool isVisible = true;
   bool _isLoading = true;
   List<String> groups = [];
-
+  String? _selectedOption;
+  final List<String> _dropdownOptions = [
+    'Interested',
+    'Incomplete',
+    'In Progress',
+    'Not Answered',
+    'Converted',
+    'Visited',
+    'Rejected',
+    'Demo Done'
+  ];
+  Map<String, IconData> optionIcons = {
+    'Interested': FontAwesomeIcons.star,
+    'Incomplete': FontAwesomeIcons.hourglassHalf,
+    'In Progress': FontAwesomeIcons.cogs,
+    'Not Answered': FontAwesomeIcons.questionCircle,
+    'Converted': FontAwesomeIcons.checkCircle,
+    'Visited': FontAwesomeIcons.mapMarkerAlt,
+    'Rejected': FontAwesomeIcons.timesCircle,
+    'Demo Done': FontAwesomeIcons.clipboardCheck,
+  };
   @override
   void initState() {
     // TODO: implement initState
@@ -1962,15 +1996,15 @@ class _DetailScreenState extends State<DetailScreen>
             children: [
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade900,
-                  borderRadius: BorderRadius.circular(15)
-                ),
+                    color: Colors.blue.shade900,
+                    borderRadius: BorderRadius.circular(15)),
                 child: ListTile(
-                  leading: Icon(Icons.perm_contact_cal_sharp,
-                      color: Colors.white),
+                  leading:
+                      Icon(Icons.perm_contact_cal_sharp, color: Colors.white),
                   title: Text(
                     'Add to Phonebook',
-                    style: TextStyle(color:  Colors.white,fontFamily: "Poppins"),
+                    style:
+                        TextStyle(color: Colors.white, fontFamily: "Poppins"),
                   ),
                   onTap: () {
                     // Handle "Add to Phonebook" action
@@ -1979,19 +2013,21 @@ class _DetailScreenState extends State<DetailScreen>
                   },
                 ),
               ),
-              SizedBox(height: 10,),
+              SizedBox(
+                height: 10,
+              ),
               Container(
                 decoration: BoxDecoration(
                     color: Colors.blue.shade900,
-                    borderRadius: BorderRadius.circular(15)
-                ),
+                    borderRadius: BorderRadius.circular(15)),
                 child: ListTile(
-                  leading: Icon(Icons.check, color:  Colors.white),
+                  leading: Icon(Icons.check, color: Colors.white),
                   title: Text(
                     widget.data?['contact'] == 'uncontacted'
                         ? 'Mark as Contacted'
                         : 'Mark as Uncontacted',
-                    style: TextStyle(color: Colors.white,fontFamily: 'Poppins'),
+                    style:
+                        TextStyle(color: Colors.white, fontFamily: 'Poppins'),
                   ),
                   onTap: () {
                     // Handle "Mark as Contacted" action
@@ -2008,7 +2044,9 @@ class _DetailScreenState extends State<DetailScreen>
                   },
                 ),
               ),
-              SizedBox(height: 20,)
+              SizedBox(
+                height: 20,
+              )
             ],
           ),
         );
@@ -2105,7 +2143,10 @@ class _DetailScreenState extends State<DetailScreen>
                         },
                         child: Text(
                           "Manage groups",
-                          style: TextStyle(color: Colors.blue.shade900,fontFamily:'Poppins',fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              color: Colors.blue.shade900,
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.bold),
                         ),
                       ),
                       GestureDetector(
@@ -2122,14 +2163,18 @@ class _DetailScreenState extends State<DetailScreen>
                                     widget.user.project_unique_code,
                                 onGroupCreated: () async {
                                   // Load the updated groups after a new group is created
-                                  _groups = await loadGroups();
+                                  await _loadGroups(
+                                      widget.user.project_unique_code);
 
                                   // Use setState to rebuild the UI with the updated list
                                   setState(() {});
 
                                   // Optionally, display the bottom sheet with updated groups after a short delay
                                   Future.delayed(Duration(milliseconds: 150),
-                                      () {
+                                      () async {
+                                    await _loadGroups(
+                                        widget.user.project_unique_code);
+                                    setState(() {});
                                     _groupsBottomSheet(context);
                                   });
                                 },
@@ -2142,7 +2187,10 @@ class _DetailScreenState extends State<DetailScreen>
                         },
                         child: Text(
                           "Create New",
-                          style: TextStyle(color: Colors.blue.shade900,fontFamily:'Poppins',fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              color: Colors.blue.shade900,
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.bold),
                         ),
                       )
                     ],
@@ -2163,12 +2211,17 @@ class _DetailScreenState extends State<DetailScreen>
                               Navigator.pop(context);
                             },
                             child: ListTile(
-                              leading:Image.asset('assets/images/group.png',
-                              height:25 ,width: 25,),
+                              leading: Image.asset(
+                                'assets/images/group.png',
+                                height: 25,
+                                width: 25,
+                              ),
                               title: Text(
                                 group['group_name'],
                                 style: TextStyle(
-                                    color: Colors.black, fontSize: 16,fontFamily: 'Poppins'),
+                                    color: Colors.black,
+                                    fontSize: 16,
+                                    fontFamily: 'Poppins'),
                               ),
                             ),
                           );
@@ -2188,7 +2241,7 @@ class _DetailScreenState extends State<DetailScreen>
       builder: (context) {
         return Container(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal:10.0),
+            padding: const EdgeInsets.symmetric(horizontal: 10.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -2199,63 +2252,66 @@ class _DetailScreenState extends State<DetailScreen>
                     padding: const EdgeInsets.symmetric(
                         vertical: 15.0, horizontal: 15.0),
                     child: Center(
-                      child: Text(
-                        "Options",
-                        style: TextStyle(
-                               color: Colors.blue.shade900,
+                      child: Text("Options",
+                          style: TextStyle(
+                              color: Colors.blue.shade900,
                               fontFamily: 'Poppins',
-                          fontWeight: FontWeight.bold
-                            )
-                        ),
+                              fontWeight: FontWeight.bold)),
                     ),
-                    ),
+                  ),
                   decoration: BoxDecoration(
                       // color: Colors.blue.shade900,
                       borderRadius: BorderRadius.only(
                           topLeft: Radius.circular(10),
                           topRight: Radius.circular(10))),
                 ),
-                SizedBox(height: 10,),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade900,
-                    borderRadius: BorderRadius.circular(15)
-                  ),
-                  child:ListTile(
-                    leading: Icon(Icons.groups, color: Colors.white),
-                  title: Text(
-                    'Add to groups',
-                    style: TextStyle(color: Colors.white,fontFamily: 'Poppins'),
-                  ),
-                  onTap: () {
-                    _loadGroups(widget.user.project_unique_code);
-                    Navigator.pop(context);
-                    Future.delayed(Duration(milliseconds: 100), () {
-                      _groupsBottomSheet(context); // Show the groups modal sheet
-                    });
-                  },
-                ),),
-                SizedBox(height: 10,),
-
+                SizedBox(
+                  height: 10,
+                ),
                 Container(
                   decoration: BoxDecoration(
                       color: Colors.blue.shade900,
-                      borderRadius: BorderRadius.circular(15)
+                      borderRadius: BorderRadius.circular(15)),
+                  child: ListTile(
+                    leading: Icon(Icons.groups, color: Colors.white),
+                    title: Text(
+                      'Add to groups',
+                      style:
+                          TextStyle(color: Colors.white, fontFamily: 'Poppins'),
+                    ),
+                    onTap: () {
+                      _loadGroups(widget.user.project_unique_code);
+                      Navigator.pop(context);
+                      Future.delayed(Duration(milliseconds: 100), () {
+                        _groupsBottomSheet(
+                            context); // Show the groups modal sheet
+                      });
+                    },
                   ),
+                ),
+                SizedBox(
+                  height: 10,
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                      color: Colors.blue.shade900,
+                      borderRadius: BorderRadius.circular(15)),
                   child: ListTile(
                     leading: Icon(Icons.close, color: Colors.white),
                     title: Text(
                       widget.data?['contact'] == 'uncontacted'
                           ? 'Mark as Contacted'
                           : 'Mark as Uncontacted',
-                      style: TextStyle(color: Colors.white, fontFamily: 'Poppins'),
+                      style:
+                          TextStyle(color: Colors.white, fontFamily: 'Poppins'),
                     ),
                     onTap: () {
                       _toggleContainer();
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                         content: Text(
-                            "Status will be updated to ${widget.data?['contact'] == 'uncontacted' ? 'contacted' : 'uncontacted'}",
-                          style: TextStyle( fontFamily: 'Poppins'),),
+                          "Status will be updated to ${widget.data?['contact'] == 'uncontacted' ? 'contacted' : 'uncontacted'}",
+                          style: TextStyle(fontFamily: 'Poppins'),
+                        ),
                         backgroundColor: Colors.blue.shade900,
                       ));
                       _updateContactStatus(
@@ -2264,19 +2320,20 @@ class _DetailScreenState extends State<DetailScreen>
                     },
                   ),
                 ),
-                SizedBox(height: 10,),
-
+                SizedBox(
+                  height: 10,
+                ),
                 Container(
                   decoration: BoxDecoration(
                       color: Colors.blue.shade900,
-                      borderRadius: BorderRadius.circular(15)
-                  ),
+                      borderRadius: BorderRadius.circular(15)),
                   child: ListTile(
-                    leading: Icon(Icons.perm_contact_cal_sharp,
-                        color: Colors.white),
+                    leading:
+                        Icon(Icons.perm_contact_cal_sharp, color: Colors.white),
                     title: Text(
                       'Add to phonebook',
-                      style: TextStyle(color: Colors.white, fontFamily: 'Poppins'),
+                      style:
+                          TextStyle(color: Colors.white, fontFamily: 'Poppins'),
                     ),
                     onTap: () {
                       // Handle "Mark as Contacted" action
@@ -2285,8 +2342,9 @@ class _DetailScreenState extends State<DetailScreen>
                     },
                   ),
                 ),
-                SizedBox(height: 50,),
-
+                SizedBox(
+                  height: 50,
+                ),
               ],
             ),
           ),
@@ -2436,7 +2494,8 @@ class _DetailScreenState extends State<DetailScreen>
     }
   }
 
-  Future<void> _postFollowUpDate(String uniqueId, String seoId, DateTime followupDate) async {
+  Future<void> _postFollowUpDate(
+      String uniqueId, String seoId, DateTime followupDate) async {
     // Format the date as 'dd-MM-yyyy'
     String formattedDate = DateFormat('dd-MM-yyyy').format(followupDate);
 
@@ -2522,12 +2581,11 @@ class _DetailScreenState extends State<DetailScreen>
                 child: ListTile(
                   title: Text(
                     title,
-                    style: TextStyle(
-                      color:
-                           Colors.white,fontFamily: 'Poppins'
-                    ),
+                    style:
+                        TextStyle(color: Colors.white, fontFamily: 'Poppins'),
                   ),
-                  tileColor: _selectedDate == date ? Colors.blue.shade900 : null,
+                  tileColor:
+                      _selectedDate == date ? Colors.blue.shade900 : null,
                   onTap: () {
                     setState(() {
                       _selectedDate = date;
@@ -2535,7 +2593,8 @@ class _DetailScreenState extends State<DetailScreen>
                     Navigator.pop(context);
                     _saveFollowUpDateForUser(
                         username, _selectedDate!); // Save selected date
-                    onDateSelected(_selectedDate); // Callback to update the date
+                    onDateSelected(
+                        _selectedDate); // Callback to update the date
                     postFollowUpDate(uniqueId, seoId,
                         _selectedDate!); // Call the passed post function
                   },
@@ -2585,8 +2644,10 @@ class _DetailScreenState extends State<DetailScreen>
                       child: Center(
                         child: Text(
                           "Schedule follow-up for $username",
-                          style: TextStyle(color: Colors.blue.shade900,
-                              fontFamily: 'Poppins',fontWeight: FontWeight.bold ),
+                          style: TextStyle(
+                              color: Colors.blue.shade900,
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
@@ -2598,21 +2659,29 @@ class _DetailScreenState extends State<DetailScreen>
                         child: Column(
                           children: [
                             _buildListTile('Today', DateTime.now()),
-                            SizedBox(height: 10,),
+                            SizedBox(
+                              height: 10,
+                            ),
                             _buildListTile('Tomorrow',
                                 DateTime.now().add(Duration(days: 1))),
-                            SizedBox(height: 10,),
-
+                            SizedBox(
+                              height: 10,
+                            ),
                             _buildListTile('3 days from now',
                                 DateTime.now().add(Duration(days: 3))),
-                            SizedBox(height: 10,),
-
+                            SizedBox(
+                              height: 10,
+                            ),
                             _buildListTile('1 week from now',
                                 DateTime.now().add(Duration(days: 7))),
-                            SizedBox(height: 10,),
+                            SizedBox(
+                              height: 10,
+                            ),
                             _buildListTile('1 month from now',
                                 DateTime.now().add(Duration(days: 30))),
-                            SizedBox(height: 10,),
+                            SizedBox(
+                              height: 10,
+                            ),
                             Container(
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(15),
@@ -2621,13 +2690,17 @@ class _DetailScreenState extends State<DetailScreen>
                               child: ListTile(
                                 title: Text(
                                   'Select custom date and time',
-                                  style: TextStyle(color: Colors.white,fontFamily: 'Poppins'),
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontFamily: 'Poppins'),
                                 ),
                                 onTap:
                                     _showCustomDateSelector, // Handle custom date selection
                               ),
                             ),
-                            SizedBox(height: 10,),
+                            SizedBox(
+                              height: 10,
+                            ),
                           ],
                         ),
                       ),
@@ -2682,7 +2755,15 @@ class _DetailScreenState extends State<DetailScreen>
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Center(child: Text('Send Message',style: TextStyle(fontFamily: 'Poppins',fontWeight: FontWeight.w500,fontSize: 20,color: Colors.blue.shade900),)),
+          title: Center(
+              child: Text(
+            'Send Message',
+            style: TextStyle(
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.w500,
+                fontSize: 20,
+                color: Colors.blue.shade900),
+          )),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10.0),
           ),
@@ -2690,8 +2771,9 @@ class _DetailScreenState extends State<DetailScreen>
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Container(
-                decoration: BoxDecoration(color: Colors.blue.shade900,
-                borderRadius: BorderRadius.circular(15)),
+                decoration: BoxDecoration(
+                    color: Colors.blue.shade900,
+                    borderRadius: BorderRadius.circular(15)),
                 child: ListTile(
                   leading: Icon(
                     Icons.textsms_outlined,
@@ -2699,7 +2781,8 @@ class _DetailScreenState extends State<DetailScreen>
                   ),
                   title: Text(
                     'Send via Text',
-                    style: TextStyle(color: Colors.white,fontFamily: 'Poppins'),
+                    style:
+                        TextStyle(color: Colors.white, fontFamily: 'Poppins'),
                   ),
                   onTap: () {
                     String message = _messageController.text;
@@ -2708,9 +2791,12 @@ class _DetailScreenState extends State<DetailScreen>
                   },
                 ),
               ),
-              SizedBox(height: 10,),
+              SizedBox(
+                height: 10,
+              ),
               Container(
-                decoration: BoxDecoration(color: Colors.blue.shade900,
+                decoration: BoxDecoration(
+                    color: Colors.blue.shade900,
                     borderRadius: BorderRadius.circular(15)),
                 child: ListTile(
                   leading: Icon(
@@ -2719,18 +2805,23 @@ class _DetailScreenState extends State<DetailScreen>
                   ),
                   title: Text(
                     'Send via Whatsapp',
-                    style: TextStyle(color: Colors.white,fontFamily: 'Poppins'),
+                    style:
+                        TextStyle(color: Colors.white, fontFamily: 'Poppins'),
                   ),
                   onTap: () {
                     String message = _messageController.text;
-                    _sendWhatsAppMessage(context, message, widget.data?['phone']);
+                    _sendWhatsAppMessage(
+                        context, message, widget.data?['phone']);
                     Navigator.pop(context);
                   },
                 ),
               ),
-              SizedBox(height: 10,),
+              SizedBox(
+                height: 10,
+              ),
               Container(
-                decoration: BoxDecoration(color: Colors.blue.shade900,
+                decoration: BoxDecoration(
+                    color: Colors.blue.shade900,
                     borderRadius: BorderRadius.circular(15)),
                 child: ListTile(
                   leading: Icon(
@@ -2739,7 +2830,8 @@ class _DetailScreenState extends State<DetailScreen>
                   ),
                   title: Text(
                     'Send via Email',
-                    style: TextStyle(color: Colors.white,fontFamily: 'Poppins'),
+                    style:
+                        TextStyle(color: Colors.white, fontFamily: 'Poppins'),
                   ),
                   onTap: () {
                     String title = _titleController.text;
@@ -2922,6 +3014,37 @@ class _DetailScreenState extends State<DetailScreen>
     }
   }
 
+  Widget dropdownWithArrow({
+    required String? selectedOption,
+    required List<String> options,
+    required ValueChanged<String?> onOptionSelected,
+  }) {
+    return DropdownButtonHideUnderline(
+      child: DropdownButton<String>(
+        value: selectedOption,
+        isExpanded: true,
+        hint: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              selectedOption ?? 'Please select status',
+              style: TextStyle(fontSize: 16, color: Colors.black),
+            ),
+            Icon(Icons.arrow_drop_down, color: Colors.grey),
+          ],
+        ),
+        style: TextStyle(color: Colors.black),
+        items: options.map((String value) {
+          return DropdownMenuItem<String>(
+            value: value,
+            child: Text(value),
+          );
+        }).toList(),
+        onChanged: onOptionSelected,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -2958,8 +3081,10 @@ class _DetailScreenState extends State<DetailScreen>
                 child: Text(
                   'Leads',
                   style: TextStyle(
-                    fontSize: 24, fontFamily: 'Poppins',
-                    fontWeight: FontWeight.bold, color: Colors.blue[900],
+                    fontSize: 24,
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue[900],
                   ),
                 ),
               )),
@@ -3350,6 +3475,86 @@ class _DetailScreenState extends State<DetailScreen>
                       ),
                     ),
                     const SizedBox(height: 10.0),
+                    Container(
+                      height: 50,
+                      width: 360,
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 8.0, horizontal: 12.0),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(30),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.5),
+                            spreadRadius: 2,
+                            blurRadius: 5,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedOption, // Current selected option
+                          hint: Row(
+                            children: [
+                              const Icon(
+                                FontAwesomeIcons.userCheck,
+                                color: Colors.black,
+                                size: 18,
+                              ),
+                              const SizedBox(width: 10),
+                              const Text(
+                                'Please select status',
+                                style: TextStyle(
+                                  fontSize: 15.0,
+                                  color: Colors.black,
+                                  fontFamily: 'Poppins',
+                                ),
+                              ),
+                            ],
+                          ),
+                          isExpanded: true,
+                          icon: const Icon(Icons.arrow_drop_down,
+                              color: Colors.black),
+                          iconSize: 24,
+                          style: const TextStyle(
+                            fontSize: 15.0,
+                            color: Colors.black,
+                            fontFamily: 'Poppins',
+                          ),
+                          items: _dropdownOptions.map((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    optionIcons[
+                                        value], // Get the icon for the value
+                                    size: 20,
+                                    color: Colors.black,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Text(value),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              _selectedOption =
+                                  newValue; // Update the selected option
+                            });
+                          },
+                          // Customize the dropdown menu's appearance with rounded borders
+                          dropdownColor:
+                              Colors.white, // Background color of the dropdown
+                          elevation: 3,
+                          padding: EdgeInsets.all(0),
+                          itemHeight: 50,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20.0),
                     const Text(
                       'Lead Information',
                       style: TextStyle(

@@ -1629,6 +1629,27 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen>
   int _uncontactedCount = 0;
   bool isVisible = true;
   bool _isLoading = true;
+  String? _selectedOption;
+  final List<String> _dropdownOptions = [
+    'Interested',
+    'Incomplete',
+    'In Progress',
+    'Not Answered',
+    'Converted',
+    'Visited',
+    'Rejected',
+    'Demo Done'
+  ];
+  Map<String, IconData> optionIcons = {
+    'Interested': FontAwesomeIcons.star,
+    'Incomplete': FontAwesomeIcons.hourglassHalf,
+    'In Progress': FontAwesomeIcons.cogs,
+    'Not Answered': FontAwesomeIcons.questionCircle,
+    'Converted': FontAwesomeIcons.checkCircle,
+    'Visited': FontAwesomeIcons.mapMarkerAlt,
+    'Rejected': FontAwesomeIcons.timesCircle,
+    'Demo Done': FontAwesomeIcons.clipboardCheck,
+  };
 
   @override
   void initState() {
@@ -2761,6 +2782,37 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen>
     return formattedDate;
   }
 
+  Widget dropdownWithArrow({
+    required String? selectedOption,
+    required List<String> options,
+    required ValueChanged<String?> onOptionSelected,
+  }) {
+    return DropdownButtonHideUnderline(
+      child: DropdownButton<String>(
+        value: selectedOption,
+        isExpanded: true,
+        hint: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              selectedOption ?? 'Please select status',
+              style: TextStyle(fontSize: 16, color: Colors.black),
+            ),
+            Icon(Icons.arrow_drop_down, color: Colors.grey),
+          ],
+        ),
+        style: TextStyle(color: Colors.black),
+        items: options.map((String value) {
+          return DropdownMenuItem<String>(
+            value: value,
+            child: Text(value),
+          );
+        }).toList(),
+        onChanged: onOptionSelected,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -3187,6 +3239,86 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen>
                       ),
                     ),
                     const SizedBox(height: 10.0),
+                    Container(
+                      height: 50,
+                      width: 360,
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 8.0, horizontal: 12.0),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(30),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.5),
+                            spreadRadius: 2,
+                            blurRadius: 5,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedOption, // Current selected option
+                          hint: Row(
+                            children: [
+                              const Icon(
+                                FontAwesomeIcons.userCheck,
+                                color: Colors.black,
+                                size: 18,
+                              ),
+                              const SizedBox(width: 10),
+                              const Text(
+                                'Please select status',
+                                style: TextStyle(
+                                  fontSize: 15.0,
+                                  color: Colors.black,
+                                  fontFamily: 'Poppins',
+                                ),
+                              ),
+                            ],
+                          ),
+                          isExpanded: true,
+                          icon: const Icon(Icons.arrow_drop_down,
+                              color: Colors.black),
+                          iconSize: 24,
+                          style: const TextStyle(
+                            fontSize: 15.0,
+                            color: Colors.black,
+                            fontFamily: 'Poppins',
+                          ),
+                          items: _dropdownOptions.map((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    optionIcons[
+                                    value], // Get the icon for the value
+                                    size: 20,
+                                    color: Colors.black,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Text(value),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              _selectedOption =
+                                  newValue; // Update the selected option
+                            });
+                          },
+                          // Customize the dropdown menu's appearance with rounded borders
+                          dropdownColor:
+                          Colors.white, // Background color of the dropdown
+                          elevation: 3,
+                          padding: EdgeInsets.all(0),
+                          itemHeight: 50,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20.0),
                     const Text(
                       'Lead Information',
                       style: TextStyle(

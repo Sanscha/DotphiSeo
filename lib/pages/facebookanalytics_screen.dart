@@ -126,42 +126,91 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
   Future<void> _fetchPageMetrics(String pageId, String pageAccessToken) async {
-    try {
-      final response = await http.get(
-        Uri.parse(
-          'https://graph.facebook.com/v12.0/$pageId/posts?fields=message,created_time,likes.summary(true),comments.summary(true)&since=1730023665&until=1732615665&access_token=$pageAccessToken',
-        ),
-      );
+    String baseUrl =
+        'https://graph.facebook.com/v12.0/$pageId/posts?fields=message,created_time,likes.summary(true),comments.summary(true)&since=1730023665&until=1732615665&access_token=$pageAccessToken';
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        print(data);
+    String pageViewsUrl =
+        'https://graph.facebook.com/v12.0/$pageId/insights/page_views_total/days_28?access_token=$pageAccessToken';
 
-        // Extract required data from the response
-        setState(() {
-          pageMetrics['postsCount'] = data['data']?.length ?? 0;
-          pageMetrics['reactions'] = data['data']?.fold<int>(
-            0,
-                (sum, post) =>
-            sum + (post['likes']?['summary']?['total_count'] ?? 0),
-          ) ??
-              0;
-          pageMetrics['comments'] = data['data']?.fold<int>(
-            0,
-                (sum, post) =>
-            sum + (post['comments']?['summary']?['total_count'] ?? 0),
-          ) ??
-              0;
-          // Add more metrics as needed
-        });
-      } else {
-        throw Exception("Failed to fetch page metrics");
+    List<dynamic> allPosts = [];
+    int totalPageViews = 0;
+
+    // Fetch posts data recursively
+    Future<void> fetchPostsData(String url) async {
+      try {
+        final response = await http.get(Uri.parse(url));
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          allPosts.addAll(data['data']); // Add current page's posts
+
+          // Check if there is a next page and fetch recursively
+          if (data['paging'] != null && data['paging']['next'] != null) {
+            await fetchPostsData(data['paging']['next']);
+          }
+        } else {
+          throw Exception("Failed to fetch page metrics");
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error fetching page metrics: $e")),
+        );
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error fetching page metrics: $e")),
-      );
     }
+
+    // Fetch page views
+    Future<void> fetchPageViews(String url) async {
+      try {
+        final response = await http.get(Uri.parse(url));
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+
+          // Extract page view data (if available)
+          final pageViewData = data['data']?[0]['values'] ?? [];
+
+          // Sum up the total page views from the values (assuming 'value' contains the count)
+          totalPageViews = pageViewData.fold<int>(
+            0,
+                (sum, item) => sum + ((item['value'] ?? 0) as int),
+          );
+        } else {
+          throw Exception("Failed to fetch page views");
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error fetching page views: $e")),
+        );
+      }
+    }
+
+    // Start fetching posts and page views
+    await Future.wait([
+      fetchPostsData(baseUrl),
+      fetchPageViews(pageViewsUrl),
+    ]);
+
+    // Calculate metrics from the fetched posts
+    int totalReactions = allPosts.fold<int>(
+      0,
+          (sum, post) => sum + ((post['likes']?['summary']?['total_count'] ?? 0) as int),
+    );
+    int totalComments = allPosts.fold<int>(
+      0,
+          (sum, post) => sum + ((post['comments']?['summary']?['total_count'] ?? 0) as int),
+    );
+
+    // Update UI state
+    setState(() {
+      pageMetrics['postsCount'] = allPosts.length;
+      pageMetrics['reactions'] = totalReactions;
+      pageMetrics['comments'] = totalComments;
+      pageMetrics['pageViews'] = totalPageViews; // Store the total page views
+    });
+
+    // Print the results
+    print('Total posts: ${allPosts.length}');
+    print('Total reactions: $totalReactions');
+    print('Total comments: $totalComments');
+    print('Total page views: $totalPageViews');
   }
 
 
@@ -245,15 +294,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
       drawer: _buildDrawer(context), // Drawer as usual
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        child: SingleChildScrollView(
+          scrollDirection: Axis.vertical,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
 
 
-            Text("Posts by Count: $pageMetrics['postsCount']", style: const TextStyle(fontSize: 15,
-            fontFamily: 'Poppins')),
+              Text("Posts by Count: $pageMetrics['reactions']", style: const TextStyle(fontSize: 15,
+              fontFamily: 'Poppins')),
 
-          ],
+            ],
+          ),
         ),
       ),
     );

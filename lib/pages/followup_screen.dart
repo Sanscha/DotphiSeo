@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:dotphi_seo_app/pages/entries_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -122,6 +123,36 @@ class _FollowupScreenState extends State<FollowupScreen> {
       });
     }
   }
+  Widget ToggleButtonWithNavigation(BuildContext context) {
+    bool isToggled = false;
+
+    // Function to handle the toggle change and navigate
+    void onToggleChanged(bool value, BuildContext context) {
+      isToggled = value;
+
+      // Navigate to a different screen based on toggle value
+      if (isToggled) {
+        // Use Navigator.push to navigate to EntriesScreen
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => EntriesScreen()),
+        );
+      } else {
+        // Pop the current screen if toggled off
+        Navigator.pop(context);
+      }
+    }
+
+    return Switch(
+      value: isToggled,
+      onChanged: (value) {
+        onToggleChanged(value, context); // Navigate on toggle change
+      },
+      activeTrackColor: Colors.white,  // Optional: Set the active track color
+      activeColor: Colors.green,      // Optional: Set the active color
+      inactiveTrackColor: Colors.grey, // Optional: Set the inactive track color
+      inactiveThumbColor: Colors.white,);
+  }
 
   // void checkAndShowFollowUpNotifications() {
   //   DateTime today = DateTime.now();
@@ -146,17 +177,31 @@ class _FollowupScreenState extends State<FollowupScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(
-            'Follow-ups',
-            style: TextStyle(
-              fontSize: 24,
-              fontFamily: 'Poppins',
-              fontWeight: FontWeight.bold,
-              color: Colors.blue[900],
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                children: [
+                  Text(
+                    'Follow-ups',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue[900],
+                    ),
+                  ),
+                 SizedBox(width: 20,),
+                  Text('Follow-ups',style: TextStyle(fontSize: 12,fontFamily: 'Poppins',fontWeight: FontWeight.bold),),
+                  ToggleButtonWithNavigation(context),
+                  Text('Entries',style: TextStyle(fontSize: 12,fontFamily: 'Poppins',fontWeight: FontWeight.bold),)
+                ],
+              ),
             ),
-          ),
+
+          ],
         ),
       ),
       body: Container(

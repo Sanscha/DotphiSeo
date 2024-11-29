@@ -24,7 +24,8 @@ class _FollowupdetailsScreenState extends State<FollowupdetailsScreen> {
     String activitiesJson = jsonEncode(activities);
 
     // Use the user's name or another unique identifier as the key
-    String userKey = widget.followUp['name']; // or widget.followUp['seoId'] if SEO ID is used
+    String userKey = widget
+        .followUp['name']; // or widget.followUp['seoId'] if SEO ID is used
     await prefs.setString(userKey, activitiesJson);
   }
 
@@ -39,24 +40,28 @@ class _FollowupdetailsScreenState extends State<FollowupdetailsScreen> {
     if (activitiesJson != null) {
       List<dynamic> decodedList = jsonDecode(activitiesJson);
       setState(() {
-        activities = decodedList.map((item) => Map<String, dynamic>.from(item)).toList();
+        activities =
+            decodedList.map((item) => Map<String, dynamic>.from(item)).toList();
       });
     }
   }
 
   // Method to add an activity
   void _addActivity(String type, String details) async {
-    setState(() {
-      activities.add({
-        'type': type,
-        'details': details,
-        'date': DateFormat('dd-MM-yyyy').format(DateTime.now()),
+    if (type.isNotEmpty && details.isNotEmpty) {
+      setState(() {
+        activities.add({
+          'type': type,
+          'details': details,
+          'date': DateFormat('dd-MM-yyyy').format(DateTime.now()),
+        });
       });
-    });
 
-    // Save updated activities to SharedPreferences
-    await saveActivities(activities);
+      // Save updated activities to SharedPreferences
+      await saveActivities(activities);
+    }
   }
+
 
   void _sendSMS(BuildContext context, String message, String recipient) async {
     final Uri smsUri = Uri(
@@ -78,7 +83,8 @@ class _FollowupdetailsScreenState extends State<FollowupdetailsScreen> {
     }
   }
 
-  Future<void> _sendWhatsAppMessage(BuildContext context, String message, String recipient) async {
+  Future<void> _sendWhatsAppMessage(
+      BuildContext context, String message, String recipient) async {
     bool fileSelected = _filePath != null && _filePath!.isNotEmpty;
 
     // If a file is selected, share the file along with the message
@@ -142,6 +148,7 @@ class _FollowupdetailsScreenState extends State<FollowupdetailsScreen> {
       );
     }
   }
+
   void launchDialer(String phoneNumber) async {
     // Clean the phone number by removing 'p:+91' or any similar prefix
     String cleanedPhoneNumber = phoneNumber.replaceAll(RegExp(r'^p:\+91'), '');
@@ -155,11 +162,10 @@ class _FollowupdetailsScreenState extends State<FollowupdetailsScreen> {
     }
   }
 
-
   @override
   void initState() {
     super.initState();
-    loadActivities();  // Load activities when the screen is initialized
+    loadActivities(); // Load activities when the screen is initialized
   }
 
   @override
@@ -179,7 +185,7 @@ class _FollowupdetailsScreenState extends State<FollowupdetailsScreen> {
                     child: Text(
                       '${widget.followUp['name']}:',
                       style: TextStyle(
-                        fontSize: 24,
+                        fontSize: 18,
                         fontFamily: 'Poppins',
                         fontWeight: FontWeight.bold,
                         color: Colors.blue[900],
@@ -189,7 +195,7 @@ class _FollowupdetailsScreenState extends State<FollowupdetailsScreen> {
                   Text(
                     widget.followUp['phone'].replaceAll(RegExp(r'^p:'), ''),
                     style: TextStyle(
-                      fontSize: 20,
+                      fontSize: 18,
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.bold,
                     ),
@@ -205,22 +211,23 @@ class _FollowupdetailsScreenState extends State<FollowupdetailsScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       GestureDetector(
-                        onTap: () async{
+                        onTap: () async {
                           _addActivity('Follow up via', 'WhatsApp');
-                          final phoneNumber =
-                                widget.followUp['phone']?.replaceAll(RegExp(r'^p:\+91'),'');
-                            final whatsappUrl = 'https://wa.me/$phoneNumber';
-                            final whatsappInstalled = await canLaunch(whatsappUrl);
-                            if (whatsappInstalled) {
-                              launch(whatsappUrl);
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content:
-                                  Text('WhatsApp is not installed on your device.'),
-                                ),
-                              );
-                            }
+                          final phoneNumber = widget.followUp['phone']
+                              ?.replaceAll(RegExp(r'^p:\+91'), '');
+                          final whatsappUrl = 'https://wa.me/$phoneNumber';
+                          final whatsappInstalled =
+                              await canLaunch(whatsappUrl);
+                          if (whatsappInstalled) {
+                            launch(whatsappUrl);
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                    'WhatsApp is not installed on your device.'),
+                              ),
+                            );
+                          }
                         },
                         child: Image.asset(
                           'assets/images/whatsapp.png',
@@ -244,9 +251,8 @@ class _FollowupdetailsScreenState extends State<FollowupdetailsScreen> {
                         onTap: () {
                           _addActivity('Follow up via', 'Call');
                           launch(
-                              'tel:${widget.followUp['phone']?.replaceAll(RegExp(r'^p:\+91'), '') ?? 'No phone'}'
-                          );
-                          },
+                              'tel:${widget.followUp['phone']?.replaceAll(RegExp(r'^p:\+91'), '') ?? 'No phone'}');
+                        },
                         child: Image.asset(
                           'assets/images/telephone.png',
                           width: 40,
@@ -264,7 +270,7 @@ class _FollowupdetailsScreenState extends State<FollowupdetailsScreen> {
                 child: Text(
                   'Status',
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 18,
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.bold,
                   ),
@@ -295,19 +301,16 @@ class _FollowupdetailsScreenState extends State<FollowupdetailsScreen> {
                           side: BorderSide(color: Colors.blue, width: 2),
                         ),
                         onPressed: () {
-                          _addActivity('Status Changed', 'Not Connected');
+                          _addActivity('Status Changed', 'Incomplete');
                         },
-                        child: Text('Not Connected',
+                        child: Text('Incomplete',
                             style: TextStyle(
                               fontSize: 15,
                               fontFamily: 'Poppins',
                               color: Colors.black,
                             )),
                       ),
-                    ],
-                  ),
-                  Row(
-                    children: [
+                      SizedBox(width: 15),
                       TextButton(
                         style: TextButton.styleFrom(
                           side: BorderSide(color: Colors.blue, width: 2),
@@ -322,7 +325,10 @@ class _FollowupdetailsScreenState extends State<FollowupdetailsScreen> {
                               color: Colors.black,
                             )),
                       ),
-                      SizedBox(width: 15),
+                    ],
+                  ),
+                  Row(
+                    children: [
                       TextButton(
                         style: TextButton.styleFrom(
                           side: BorderSide(color: Colors.blue, width: 2),
@@ -337,10 +343,7 @@ class _FollowupdetailsScreenState extends State<FollowupdetailsScreen> {
                               color: Colors.black,
                             )),
                       ),
-                    ],
-                  ),
-                  Row(
-                    children: [
+                      SizedBox(width: 15),
                       TextButton(
                         style: TextButton.styleFrom(
                           side: BorderSide(color: Colors.blue, width: 2),
@@ -370,15 +373,33 @@ class _FollowupdetailsScreenState extends State<FollowupdetailsScreen> {
                               color: Colors.black,
                             )),
                       ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      TextButton(
+                        style: TextButton.styleFrom(
+                          side: BorderSide(color: Colors.blue, width: 2),
+                        ),
+                        onPressed: () {
+                          _addActivity('Status Changed', 'Rejected');
+                        },
+                        child: Text('Rejected',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontFamily: 'Poppins',
+                              color: Colors.black,
+                            )),
+                      ),
                       SizedBox(width: 15),
                       TextButton(
                         style: TextButton.styleFrom(
                           side: BorderSide(color: Colors.blue, width: 2),
                         ),
                         onPressed: () {
-                          _addActivity('Status Changed', 'Dead');
+                          _addActivity('Status Changed', 'Demo Done');
                         },
-                        child: Text('Dead',
+                        child: Text('Demo Done',
                             style: TextStyle(
                               fontSize: 15,
                               fontFamily: 'Poppins',
@@ -389,27 +410,39 @@ class _FollowupdetailsScreenState extends State<FollowupdetailsScreen> {
                   ),
                 ],
               ),
-              SizedBox(height: 10,),
+              SizedBox(
+                height: 10,
+              ),
               Divider(),
-              SizedBox(height: 5,),
+              SizedBox(
+                height: 5,
+              ),
               Align(
                 alignment: Alignment.topLeft,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Follow up',style:
-                    TextStyle( fontSize: 20,
-                      fontFamily: 'Poppins',
-                      fontWeight: FontWeight.bold,),),
+                    Text(
+                      'Follow up',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     GestureDetector(
-                      onTap: (){
+                      onTap: () {
                         _addActivity('Followup date changed', 'Date');
                       },
-                      child: Text("Set follow up",
-                        style: TextStyle( fontSize: 15,
+                      child: Text(
+                        "Set follow up",
+                        style: TextStyle(
+                          fontSize: 15,
                           color: Colors.blue.shade900,
                           fontFamily: 'Poppins',
-                          fontWeight: FontWeight.bold,),),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     )
                   ],
                 ),
@@ -424,7 +457,7 @@ class _FollowupdetailsScreenState extends State<FollowupdetailsScreen> {
                     Text(
                       'Timeline',
                       style: TextStyle(
-                        fontSize: 20,
+                        fontSize: 18,
                         fontFamily: 'Poppins',
                         fontWeight: FontWeight.bold,
                       ),
@@ -433,69 +466,87 @@ class _FollowupdetailsScreenState extends State<FollowupdetailsScreen> {
                 ),
               ),
               SizedBox(height: 15),
-              Container(
-                height: 300,
-                child: Stack(
-                  children: [
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Container(
-                        width: 3,
-                        color: Colors.black,
-                        height: double.infinity,
-                        margin: EdgeInsets.only(left: 15),
-                      ),
-                    ),
-                    ListView.builder(
-                      itemCount: activities.length,
-                      itemBuilder: (context, index) {
-                        final activity = activities[index];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 30.0),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                margin: EdgeInsets.only(left: 12),
-                                child: Container(
-                                  width: 12,
-                                  height: 12,
-                                  decoration: BoxDecoration(
-                                    color: Colors.blue,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: 20),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '${activity['type']}: ${activity['details']}',
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      fontFamily: 'Poppins',
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Text(
-                                    activity['date'],
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontFamily: 'Poppins',
-                                      color: Colors.black,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
+             activities.isNotEmpty?
+             Container(
+               height: 300,
+               child: Stack(
+                 children: [
+                   // Vertical line positioned before the activities
+                   Align(
+                     alignment: Alignment.topLeft,
+                     child: Container(
+                       width: 2,
+                       // Set the line height to fill the container
+                       height: activities.isNotEmpty ? activities.length * 70.0 : 0
+                       ,
+                       color: Colors.black,
+                       margin: EdgeInsets.only(left: 15), // Position the line as needed
+                     ),
+                   ),
+                   // List of activities rendered on top of the line
+                   ListView.builder(
+                     itemCount: activities.length,
+                     itemBuilder: (context, index) {
+                       final activity = activities[index];
+                       return Padding(
+                         padding: const EdgeInsets.only(bottom: 30.0),
+                         child: Row(
+                           crossAxisAlignment: CrossAxisAlignment.start,
+                           children: [
+                             // Circular marker aligned with the vertical line
+                             Container(
+                               margin: EdgeInsets.only(left: 12),
+                               child: Container(
+                                 width: 12,
+                                 height: 12,
+                                 decoration: BoxDecoration(
+                                   color: Colors.blue,
+                                   shape: BoxShape.circle,
+                                 ),
+                               ),
+                             ),
+                             SizedBox(width: 20),
+                             // Activity details
+                             Column(
+                               crossAxisAlignment: CrossAxisAlignment.start,
+                               children: [
+                                 Text(
+                                   '${activity['type']}: ${activity['details']}',
+                                   style: TextStyle(
+                                     fontSize: 15,
+                                     fontFamily: 'Poppins',
+                                     fontWeight: FontWeight.bold,
+                                   ),
+                                 ),
+                                 Text(
+                                   activity['date'],
+                                   style: TextStyle(
+                                     fontSize: 12,
+                                     fontFamily: 'Poppins',
+                                     color: Colors.black,
+                                   ),
+                                 ),
+                               ],
+                             ),
+                           ],
+                         ),
+                       );
+                     },
+                   ),
+                 ],
+               ),
+             )
+
+                 : Center(
+               child: Text(
+                 'No activities to display. Add a status to view the timeline.',
+                 style: TextStyle(
+                   fontSize: 16,
+                   fontFamily: 'Poppins',
+                   fontWeight: FontWeight.w500,
+                 ),
+               ),
+             ),
             ],
           ),
         ),

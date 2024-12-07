@@ -194,9 +194,9 @@ class _FollowupScreenState extends State<FollowupScreen> {
                     ),
                   ),
                  SizedBox(width: 20,),
-                  Text('Follow-ups',style: TextStyle(fontSize: 12,fontFamily: 'Poppins',fontWeight: FontWeight.bold),),
+                  Text('Follow-ups',style: TextStyle(fontSize: 12,fontFamily: 'Poppins'),),
                   ToggleButtonWithNavigation(context),
-                  Text('Entries',style: TextStyle(fontSize: 12,fontFamily: 'Poppins',fontWeight: FontWeight.bold),)
+                  Text('Entries',style: TextStyle(fontSize: 12,fontFamily: 'Poppins'),),
                 ],
               ),
             ),

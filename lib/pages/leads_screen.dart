@@ -3045,6 +3045,61 @@ class _DetailScreenState extends State<DetailScreen>
     );
   }
 
+
+  Future<void> sendStatus(String status, String selectedProjectCode, {String? seoId, String? id}) async {
+    // Define the URLs
+    final urlLead = Uri.parse('https://clients.dotphi.com/Api/login/lead');
+    final urlLiveChat = Uri.parse('https://clients.dotphi.com/Api/Login/livechat');
+
+    // Headers for 'application/x-www-form-urlencoded'
+    final headers = {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    };
+
+    // Define the parameters for the first API
+    final bodyLead = {
+      'unique_id': selectedProjectCode,
+      'status': status,
+      'seo_id': seoId ?? '',
+    };
+
+    // Define the parameters for the second API
+    final bodyLiveChat = {
+      'unique_id':selectedProjectCode,
+      'status': status,
+      'id': id ?? '',
+    };
+
+    try {
+      // Send the first POST request
+      final responseLead = await http.post(urlLead, headers: headers, body: bodyLead);
+
+      // Check if the first request was successful
+      if (responseLead.statusCode == 200) {
+        print('Lead API request was successful');
+        print('Response body: ${responseLead.body}');
+      } else {
+        print('Failed to send data to Lead API. Status code: ${responseLead.statusCode}');
+        print('Response body: ${responseLead.body}');
+      }
+
+      // Send the second POST request
+      final responseLiveChat = await http.post(urlLiveChat, headers: headers, body: bodyLiveChat);
+
+      // Check if the second request was successful
+      if (responseLiveChat.statusCode == 200) {
+        print('LiveChat API request was successful');
+        print('Response body: ${responseLiveChat.body}');
+      } else {
+        print('Failed to send data to LiveChat API. Status code: ${responseLiveChat.statusCode}');
+        print('Response body: ${responseLiveChat.body}');
+      }
+    } catch (e) {
+      print('Error: $e');
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -3238,7 +3293,7 @@ class _DetailScreenState extends State<DetailScreen>
                         String username = widget.data?['name'] ?? '';
                         String uniqueId =
                             widget.data?['project_unique_code'] ?? '';
-                        String seoId = widget.data?['seo_id'] ?? '';
+                        String seoId = widget.data?['seo_id'] ?? widget.data?['id'];
 
                         // Call _followUpBottomSheet with the necessary parameters
                         _followUpBottomSheet(
@@ -3478,8 +3533,7 @@ class _DetailScreenState extends State<DetailScreen>
                     Container(
                       height: 50,
                       width: 360,
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 8.0, horizontal: 12.0),
+                      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(30),
@@ -3503,8 +3557,8 @@ class _DetailScreenState extends State<DetailScreen>
                                 size: 18,
                               ),
                               const SizedBox(width: 10),
-                              const Text(
-                                'Please select status',
+                              Text(
+                                (widget.data?['status'] == 'demo' || widget.data?['status'] == null)  ? 'Please select status' : widget.data?['status'],
                                 style: TextStyle(
                                   fontSize: 15.0,
                                   color: Colors.black,
@@ -3514,8 +3568,7 @@ class _DetailScreenState extends State<DetailScreen>
                             ],
                           ),
                           isExpanded: true,
-                          icon: const Icon(Icons.arrow_drop_down,
-                              color: Colors.black),
+                          icon: const Icon(Icons.arrow_drop_down, color: Colors.black),
                           iconSize: 24,
                           style: const TextStyle(
                             fontSize: 15.0,
@@ -3528,8 +3581,7 @@ class _DetailScreenState extends State<DetailScreen>
                               child: Row(
                                 children: [
                                   Icon(
-                                    optionIcons[
-                                        value], // Get the icon for the value
+                                    optionIcons[value], // Get the icon for the value
                                     size: 20,
                                     color: Colors.black,
                                   ),
@@ -3539,18 +3591,22 @@ class _DetailScreenState extends State<DetailScreen>
                               ),
                             );
                           }).toList(),
-                          onChanged: (String? newValue) {
+                          onChanged: (String? newValue) async {
                             setState(() {
-                              _selectedOption =
-                                  newValue; // Update the selected option
+                              _selectedOption = newValue; // Update the selected option
                             });
+
+                            // Ensure non-null values for parameters
+                            String projectUniqueCode = widget.selectedProjectCode ?? '';
+                            String option = widget.data?['seo_id']?.toString() ?? widget.data?['id']?.toString() ?? '';
+
+                            if (_selectedOption != null) {
+                              // Call the API function for both APIs
+                              await sendStatus(_selectedOption!, projectUniqueCode, seoId: option, id: option);
+                            }
                           },
-                          // Customize the dropdown menu's appearance with rounded borders
-                          dropdownColor:
-                              Colors.white, // Background color of the dropdown
+                          dropdownColor: Colors.white,
                           elevation: 3,
-                          padding: EdgeInsets.all(0),
-                          itemHeight: 50,
                         ),
                       ),
                     ),

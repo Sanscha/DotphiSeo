@@ -58,10 +58,10 @@ class _EntriesScreenState extends State<EntriesScreen> {
               ),
             ),
             SizedBox(width: 20,),
-            Text('Entries',style: TextStyle(fontSize: 12,fontFamily: 'Poppins',fontWeight: FontWeight.bold),),
+            Text('Entries',style: TextStyle(fontSize: 12,fontFamily: 'Poppins'),),
             Container(
                 child: ToggleButtonWithNavigation(context)),
-            Text('Follow-ups',style: TextStyle(fontSize: 12,fontFamily: 'Poppins',fontWeight: FontWeight.bold),)
+            Text('Follow-ups',style: TextStyle(fontSize: 12,fontFamily: 'Poppins'),)
           ],
         ),
       ),
@@ -114,7 +114,6 @@ class _EntriesScreenState extends State<EntriesScreen> {
                       borderRadius: BorderRadius.circular(10), // Rounded corners
                     ),),),
                 SizedBox(width: 10,),
-
                 TextButton(onPressed: (){}, child: Text("Visited",style: TextStyle(color: Colors.white,fontFamily: 'Poppins')),
                   style: TextButton.styleFrom(
                     foregroundColor: Colors.white, backgroundColor: Colors.blue.shade900, // Text color
@@ -123,7 +122,6 @@ class _EntriesScreenState extends State<EntriesScreen> {
                       borderRadius: BorderRadius.circular(10), // Rounded corners
                     ),),),
                 SizedBox(width: 10,),
-
                 TextButton(onPressed: (){}, child: Text("Rejected",style: TextStyle(color: Colors.white,fontFamily: 'Poppins')),
                   style: TextButton.styleFrom(
                     foregroundColor: Colors.white, backgroundColor: Colors.blue.shade900, // Text color

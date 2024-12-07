@@ -2813,6 +2813,39 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen>
     );
   }
 
+  Future<void> sendStatus(String status,String selectedProjectCode,String seoId) async {
+    // Define the URL
+    final url = Uri.parse('https://clients.dotphi.com/Api/login/paid_lead');
+
+    // Define the headers for 'application/x-www-form-urlencoded'
+    final headers = {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    };
+
+    // Define the parameters including the dynamic 'status'
+    final body = {
+      'unique_id':selectedProjectCode ,
+      'status': status, // Use the status passed as a parameter
+      'seo_id': seoId,
+    };
+
+    try {
+      // Send the POST request with parameters in x-www-form-urlencoded format
+      final response = await http.post(url, headers: headers, body: body);
+
+      // Check if the request was successful
+      if (response.statusCode == 200) {
+        print('Request was successful');
+        print('Response body: ${response.body}');
+      } else {
+        print('Failed to send data. Status code: ${response.statusCode}');
+        print('Response body: ${response.body}');
+      }
+    } catch (e) {
+      print('Error: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Stack(

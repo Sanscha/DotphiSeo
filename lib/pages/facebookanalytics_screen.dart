@@ -4,6 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+
+import 'facebook_screens/contentfeed_screen.dart';
+import 'facebook_screens/engagement_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   final String accessToken;
@@ -26,13 +30,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<Map<String, dynamic>> pages = []; // List to store pages
   String? selectedPageName;
   String? selectedPageId;
-  Map<String, dynamic> pageMetrics = {
-    'postsCount': 0,
-    'pageViews': 0,
-    'reactions': 0,
-    'comments': 0,
-    'shares': 0,
-  };
+  int numberOfPosts = 0;
+  int pageViews = 0; // Local variable to store page views
+  int totalReactions=0;
+  int totalEngagements = 0; // Variable to store the total engagement count
+  double totalEngagementRate = 0;
+  int totalImpressions = 0;
+  double totalVVR = 0.0;
+  int totalFollowers=0;
+  int postClicks=0;
+  late List<dynamic> posts;
 
 
   @override
@@ -55,7 +62,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           userName = data['name'];
           userId = int.tryParse(data['id'].toString()) ?? 0;
         });
-        _fetchPageDetails();
+
+        // Fetch pages after getting user details
+        await _fetchPageList();
       } else {
         throw Exception("Failed to fetch user details");
       }
@@ -66,7 +75,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  Future<void> _fetchPageDetails() async {
+  Future<void> _fetchPageList() async {
     try {
       final response = await http.get(
         Uri.parse(
@@ -81,11 +90,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             pages = List<Map<String, dynamic>>.from(data['data']);
             print(pages);
           });
-
-          // Optionally fetch page details for each page using their access token
-          for (var page in pages) {
-            await _fetchPageDetailsByToken(page['access_token'], page['id']);
-          }
         } else {
           throw Exception("No pages found for this user");
         }
@@ -94,123 +98,722 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error fetching page details: $e")),
+        SnackBar(content: Text("Error fetching page list: $e")),
       );
     }
   }
 
-  Future<void> _fetchPageDetailsByToken(String accessToken, String pageId) async {
+  Future<void> _fetchSelectedPageDetails(String pageId, String accessToken) async {
     try {
-      final response = await http.get(
-        Uri.parse(
-            'https://graph.facebook.com/v12.0/$pageId?fields=id,name,about,category&access_token=$accessToken'),
-      );
-
-      if (response.statusCode == 200) {
-        final pageData = jsonDecode(response.body);
-
-        setState(() {
-          // Update page details (optional)
-          var pageIndex = pages.indexWhere((page) => page['id'] == pageId);
-          if (pageIndex != -1) {
-            pages[pageIndex].addAll(pageData);
-          }
-        });
-      } else {
-        throw Exception("Failed to fetch page details by access token");
-      }
+      // Fetch posts and metrics for the selected page
+      await getNumberOfPosts(pageId, accessToken);
+      await fetchPageViewsForToday(pageId, accessToken);
+      await fetchTotalReactions(pageId, accessToken);
+      await fetchTotalEngagements(pageId, accessToken);
+      await fetchTotalEngagementRate(pageId, accessToken);
+      await fetchOrganicReachRate(pageId, accessToken);
+      await fetchPagePosts(pageId, accessToken);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error fetching page details by token: $e")),
+        SnackBar(content: Text("Error fetching selected page details: $e")),
       );
     }
   }
-  Future<void> _fetchPageMetrics(String pageId, String pageAccessToken) async {
-    String baseUrl =
-        'https://graph.facebook.com/v12.0/$pageId/posts?fields=message,created_time,likes.summary(true),comments.summary(true)&since=1730023665&until=1732615665&access_token=$pageAccessToken';
 
-    String pageViewsUrl =
-        'https://graph.facebook.com/v12.0/$pageId/insights/page_views_total/days_28?access_token=$pageAccessToken';
+  Future<void> getNumberOfPosts(String pageId, String pageAccessToken) async {
+    final DateTime now = DateTime.now();
+    final DateTime thirtyDaysAgo = now.subtract(Duration(days: 30));
 
-    List<dynamic> allPosts = [];
-    int totalPageViews = 0;
+    final String sinceDate = '${thirtyDaysAgo.year}-${thirtyDaysAgo.month.toString().padLeft(2, '0')}-${thirtyDaysAgo.day.toString().padLeft(2, '0')}';
+    final String untilDate = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
-    // Fetch posts data recursively
-    Future<void> fetchPostsData(String url) async {
-      try {
+    final String url =
+        'https://graph.facebook.com/$pageId/posts?access_token=$pageAccessToken&since=$sinceDate&until=$untilDate';
+
+    try {
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['data'] != null) {
+          setState(() {
+            numberOfPosts = data['data'].length; // Store the count of posts
+          });
+          print('Number of posts in the last 30 days: $numberOfPosts');
+        } else {
+          setState(() {
+            numberOfPosts = 0;
+          });
+        }
+      } else {
+        throw Exception('Failed to load posts');
+      }
+    } catch (e) {
+      print('Error: $e');
+      setState(() {
+        numberOfPosts = 0;
+      });
+    }
+  }
+
+  Future<void> fetchPageViewsForToday(String pageId, String accessToken) async {
+    try {
+      // Get today's date
+      final today = DateTime.now();
+      final formattedToday =
+          "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
+      print(formattedToday);
+
+      // Build the API URL
+      final url =
+          'https://graph.facebook.com/v21.0/$pageId/insights/page_views_total?since=$formattedToday&until=$formattedToday&period=month&access_token=$accessToken';
+
+      // Make the API request
+      final response = await http.get(Uri.parse(url));
+
+      // Check the response status code
+      if (response.statusCode == 200) {
+        // Parse the response body
+        final data = jsonDecode(response.body);
+        print('Raw response data: $data'); // Log raw data for debugging
+
+        // Validate the structure of the response
+        if (data.containsKey('data') && (data['data'] as List).isNotEmpty) {
+          final pageViewData = data['data'][0]; // First data object
+
+          if (pageViewData.containsKey('values') &&
+              (pageViewData['values'] as List).isNotEmpty) {
+            final pageViews = pageViewData['values'][0]['value'];
+            print('Page Views for today ($formattedToday): $pageViews');
+            return;
+          }
+        }
+
+        // Log if no data found
+        print('No data found for page views on $formattedToday.');
+      } else {
+        print(
+            'Failed to fetch data. HTTP Status: ${response.statusCode}, Body: ${response.body}');
+      }
+    } catch (e) {
+      print('Error fetching page views: $e');
+    }
+  }
+
+  Future<int> fetchTotalReactions(String pageId, String accessToken) async {
+    // int totalReactions = 0; // Define a local variable to store the total reactions.
+
+    // Dynamically calculate 'since' and 'until' dates
+    final now = DateTime.now();
+    final lastMonthSameDay = DateTime(now.year, now.month - 1, now.day);
+    final today = now;
+
+    final since = lastMonthSameDay.toIso8601String().split('T')[0]; // Format: YYYY-MM-DD
+    final until = today.toIso8601String().split('T')[0]; // Format: YYYY-MM-DD
+
+    // Construct the API URL
+    String url =
+        'https://graph.facebook.com/v17.0/$pageId/posts?fields=reactions.summary(total_count)&since=$since&until=$until&access_token=$accessToken';
+
+    try {
+      while (true) {
+        // Make the API request
         final response = await http.get(Uri.parse(url));
         if (response.statusCode == 200) {
-          final data = jsonDecode(response.body);
-          allPosts.addAll(data['data']); // Add current page's posts
+          final data = json.decode(response.body);
 
-          // Check if there is a next page and fetch recursively
-          if (data['paging'] != null && data['paging']['next'] != null) {
-            await fetchPostsData(data['paging']['next']);
+          // Parse the data to calculate total reactions
+          final posts = data['data'] as List<dynamic>;
+          for (var post in posts) {
+            final reactionsSummary = post['reactions']?['summary'];
+            if (reactionsSummary != null) {
+              setState(() {
+                totalReactions += reactionsSummary['total_count'] as int;
+                print('Total reactions');
+                print(totalReactions);
+              });
+            }
+          }
+
+          // Check if there's more data to paginate
+          final paging = data['paging'];
+          if (paging != null && paging['next'] != null) {
+            // Update the URL to fetch the next page
+            url = paging['next'];
+          } else {
+            break; // No more pages
           }
         } else {
-          throw Exception("Failed to fetch page metrics");
+          throw Exception('Failed to fetch data: ${response.body}');
         }
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error fetching page metrics: $e")),
-        );
       }
+    } catch (e) {
+      print('Error: $e');
+      rethrow;
     }
 
-    // Fetch page views
-    Future<void> fetchPageViews(String url) async {
-      try {
-        final response = await http.get(Uri.parse(url));
-        if (response.statusCode == 200) {
-          final data = jsonDecode(response.body);
+    return totalReactions; // Return the total reactions.
+  }
 
-          // Extract page view data (if available)
-          final pageViewData = data['data']?[0]['values'] ?? [];
 
-          // Sum up the total page views from the values (assuming 'value' contains the count)
-          totalPageViews = pageViewData.fold<int>(
-            0,
-                (sum, item) => sum + ((item['value'] ?? 0) as int),
-          );
+  Future<int> fetchReactionsCount(String pageId, String accessToken, String since, String until) async {
+    final url =
+        'https://graph.facebook.com/v17.0/$pageId/posts?fields=reactions.summary(total_count)&since=$since&until=$until&access_token=$accessToken';
+    int totalReactions = 0;
+
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final posts = data['data'] as List;
+        for (var post in posts) {
+          final reactionsCount = (post['reactions']?['summary']?['total_count'] ?? 0) as int;
+          totalReactions += reactionsCount;
+        }
+      } else {
+        print('Failed to fetch reactions: ${response.body}');
+      }
+    } catch (e) {
+      print('Error fetching reactions: $e');
+    }
+
+    return totalReactions;
+  }
+
+  Future<int> fetchCommentsCount(String pageId, String accessToken, String since, String until) async {
+    final url =
+        'https://graph.facebook.com/v17.0/$pageId/posts?fields=comments.summary(total_count)&since=$since&until=$until&access_token=$accessToken';
+    int totalComments = 0;
+
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final posts = data['data'] as List;
+        for (var post in posts) {
+          final commentsCount = (post['comments']?['summary']?['total_count'] ?? 0) as int;
+          totalComments += commentsCount;
+        }
+      } else {
+        print('Failed to fetch comments: ${response.body}');
+      }
+    } catch (e) {
+      print('Error fetching comments: $e');
+    }
+
+    return totalComments;
+  }
+  Future<int> fetchSharesCount(String pageId, String accessToken, String since, String until) async {
+    final url =
+        'https://graph.facebook.com/v17.0/$pageId/posts?fields=shares.summary(total_count)&since=$since&until=$until&access_token=$accessToken';
+    int totalShares = 0;
+
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print(data);
+        final posts = data['data'] as List;
+
+        // Loop through all the posts and check if shares count is available
+        for (var post in posts) {
+          // Check if 'shares' field exists and contains 'summary' with 'total_count'
+          if (post.containsKey('shares') && post['shares'].containsKey('count')) {
+            int sharesCount = post['shares']['count'] ?? 0;
+            totalShares += sharesCount;
+            print('Shares Count for post: $sharesCount');
+          }
+        }
+
+        print('Total Shares: $totalShares');
+      } else {
+        print('Failed to fetch shares: ${response.body}');
+      }
+    } catch (e) {
+      print('Error fetching shares: $e');
+    }
+
+    return totalShares;
+  }
+
+  Future<int> fetchTotalEngagements(String pageId, String accessToken) async {
+    final now = DateTime.now();
+    final startOfMonth = DateTime(now.year, now.month, 1); // Start of the month
+    final since = startOfMonth.toIso8601String().split('T')[0]; // Start date: YYYY-MM-DD
+    final until = now.toIso8601String().split('T')[0]; // End date: Today's date
+
+    try {
+      // final reactionsCount = await fetchReactionsCount(pageId, accessToken, since, until);
+      final commentsCount = await fetchCommentsCount(pageId, accessToken, since, until);
+      final sharesCount = await fetchSharesCount(pageId, accessToken, since, until);
+       setState(() {
+         totalEngagements = totalReactions + commentsCount + sharesCount;
+       });
+      print('Total Engagements: $totalEngagements');
+      return totalEngagements;
+    } catch (e) {
+      print('Error fetching total engagements: $e');
+      return 0;
+    }
+  }
+
+  Future<double> fetchTotalEngagementRate(String pageId, String accessToken) async {
+    // Dynamically calculate 'since' and 'until' dates for the current month
+    final now = DateTime.now();
+    final startOfMonth = DateTime(now.year, now.month, 1); // Start of the month
+    final since = startOfMonth.toIso8601String().split('T')[0]; // Start date: YYYY-MM-DD
+    final until = now.toIso8601String().split('T')[0]; // End date: Today's date
+
+    // Construct the API URLs for reactions, comments, shares, and reach
+    final reactionsUrl =
+        'https://graph.facebook.com/v17.0/$pageId/posts?fields=reactions.summary(total_count),comments.summary(total_count),reach&since=$since&until=$until&access_token=$accessToken';
+    final sharesUrl =
+        'https://graph.facebook.com/v17.0/$pageId/posts?fields=shares.summary(total_count)&since=$since&until=$until&access_token=$accessToken';
+
+    int totalEngagements = 0; // To store the total engagements (reactions + comments + shares)
+    // To store the average Engagement Rate (ER)
+    int totalPosts = 0; // To track the number of posts processed
+
+    try {
+      // Fetch Reactions, Comments, and Reach Data
+      final reactionsResponse = await http.get(Uri.parse(reactionsUrl));
+      if (reactionsResponse.statusCode == 200) {
+        final reactionsData = json.decode(reactionsResponse.body);
+        final posts = reactionsData['data'] as List;
+
+        // Loop through posts and calculate total engagements
+        for (var post in posts) {
+          // Null check and cast to int for reactionsCount
+          int reactionsCount = (post['reactions'] != null && post['reactions']['summary'] != null)
+              ? (post['reactions']['summary']['total_count'] ?? 0).toInt()
+              : 0;
+
+          // Null check and cast to int for commentsCount
+          int commentsCount = (post['comments'] != null && post['comments']['summary'] != null)
+              ? (post['comments']['summary']['total_count'] ?? 0).toInt()
+              : 0;
+
+          // Get the reach for the post
+          int reach = post['reach'] ?? 0;
+
+          if (reach > 0) {
+            // Calculate Public Engagements
+            int publicEngagements = reactionsCount + commentsCount;
+
+            // Calculate the Engagement Rate for this post
+            double postEngagementRate = (publicEngagements / reach) * 100;
+
+            // Add the post's engagement rate to the total
+            totalEngagementRate += postEngagementRate;
+            totalPosts++;
+          }
+
+          // Add the reactions, comments counts to totalEngagements
+          totalEngagements += (reactionsCount + commentsCount);
+        }
+      } else {
+        print('Failed to fetch reactions and comments: ${reactionsResponse.body}');
+      }
+
+      // Fetch Shares Data
+      final sharesResponse = await http.get(Uri.parse(sharesUrl));
+      if (sharesResponse.statusCode == 200) {
+        final sharesData = json.decode(sharesResponse.body);
+        final posts = sharesData['data'] as List;
+
+        // Loop through posts and add shares counts
+        for (var post in posts) {
+          // Null check and cast to int for sharesCount
+          int sharesCount = (post['shares'] != null && post['shares']['summary'] != null)
+              ? (post['shares']['summary']['total_count'] ?? 0).toInt()
+              : 0;
+
+          // Add shares count to totalEngagements
+          totalEngagements += sharesCount;
+
+          // Get the reach for the post
+          int reach = post['reach'] ?? 0;
+
+          if (reach > 0) {
+            // Calculate Public Engagements for shares
+            int publicEngagements = sharesCount;
+
+            // Calculate the Engagement Rate for shares
+            double postEngagementRate = (publicEngagements / reach) * 100;
+
+            // Add the post's engagement rate to the total
+            totalEngagementRate += postEngagementRate;
+            totalPosts++;
+          }
+        }
+      } else {
+        print('Failed to fetch shares: ${sharesResponse.body}');
+      }
+
+      // Calculate the average Engagement Rate (ER) across all posts
+      if (totalPosts > 0) {
+        totalEngagementRate = totalEngagementRate / totalPosts;
+      }
+
+    } catch (e) {
+      print('Error: $e');
+      rethrow;
+    }
+
+    // Return the total engagements (reactions, comments, shares) and Engagement Rate (ER)
+    print('Total Engagements: $totalEngagements');
+    print('Average Engagement Rate: $totalEngagementRate%');
+    return totalEngagementRate; // You can also return totalEngagements if needed
+  }
+
+  Future<int> fetchTotalPostImpressions(String pageId, String accessToken, String since, String until) async {
+    // Construct the API URL to fetch post impressions
+    String url =
+        'https://graph.facebook.com/v17.0/$pageId/posts?fields=metrics(post_impressions)&since=$since&until=$until&access_token=$accessToken';
+
+    
+
+    try {
+      // Make the API request
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final posts = data['data'] as List;
+
+        // Loop through each post and sum up the impressions
+        for (var post in posts) {
+          final metrics = post['metrics'] as List;
+
+          // Find the 'post_impressions' metric
+          final impressionsData = metrics.firstWhere(
+                  (metric) => metric['name'] == 'post_impressions', orElse: () => null);
+
+          if (impressionsData != null) {
+            // Extract the value of impressions
+            int impressionsValue = impressionsData['values'][0]['value'] ?? 0;
+            totalImpressions += impressionsValue;
+          }
+        }
+      } else {
+        print('Failed to fetch post impressions: ${response.body}');
+      }
+    } catch (e) {
+      print('Error: $e');
+      rethrow;
+    }
+
+    return totalImpressions;
+  }
+
+  Future<double> fetchOrganicReachRate(String pageId, String accessToken) async {
+    // Calculate the 'since' and 'until' dates
+    DateTime today = DateTime.now();
+    DateTime oneMonthAgo = today.subtract(Duration(days: 30));
+
+    // Format the dates in the required format (YYYY-MM-DD)
+    String since = "${oneMonthAgo.year}-${oneMonthAgo.month.toString().padLeft(2, '0')}-${oneMonthAgo.day.toString().padLeft(2, '0')}";
+    String until = "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
+
+    // Fetch followers count
+    String followersUrl = 'https://graph.facebook.com/v17.0/$pageId?fields=followers_count&access_token=$accessToken';
+    int followersCount = 0;
+
+    try {
+      final followersResponse = await http.get(Uri.parse(followersUrl));
+      if (followersResponse.statusCode == 200) {
+        final followersData = json.decode(followersResponse.body);
+        followersCount = followersData['followers_count'] ?? 0;
+      } else {
+        print('Failed to fetch followers count: ${followersResponse.body}');
+        return 0.0; // Return 0 if we can't fetch followers
+      }
+
+      // Construct the API URL to fetch post insights
+      String postsUrl =
+          'https://graph.facebook.com/v17.0/$pageId/posts?fields=insights.metric(organic_reach)&since=$since&until=$until&access_token=$accessToken';
+
+      final response = await http.get(Uri.parse(postsUrl));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final posts = data['data'] as List;
+
+        double totalPostORR = 0.0;
+        int postCount = 0;
+
+        // Loop through each post and calculate ORR
+        for (var post in posts) {
+          final insights = post['insights']['data'] as List;
+          final organicReachData = insights.firstWhere(
+                  (metric) => metric['name'] == 'organic_reach', orElse: () => null);
+
+          if (organicReachData != null && followersCount > 0) {
+            final organicReach = organicReachData['values'][0]['value'] ?? 0;
+
+            // Calculate ORR for this post
+            double postORR = (organicReach / followersCount) * 100;
+            totalPostORR += postORR;
+            postCount++;
+          }
+        }
+
+        // Calculate the average ORR
+        if (postCount > 0) {
+          return totalPostORR / postCount;
         } else {
-          throw Exception("Failed to fetch page views");
+          print('No posts found in the given date range.');
+          return 0.0;
         }
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error fetching page views: $e")),
-        );
+      } else {
+        print('Failed to fetch post insights: ${response.body}');
+        return 0.0;
       }
+    } catch (e) {
+      print('Error: $e');
+      rethrow;
+    }
+  }
+
+  Future<int> fetchVideoViewCount(String pageId, String accessToken) async {
+    // Construct the URL to fetch the list of videos from the page
+    String url =
+        'https://graph.facebook.com/v17.0/$pageId/videos?access_token=$accessToken';
+
+    int totalViews = 0;
+
+    try {
+      // Make the GET request to fetch the list of videos
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final videos = data['data'] as List;
+
+        // Loop through each video and fetch the insights for video views
+        for (var video in videos) {
+          final videoId = video['id'];
+
+          // Fetch insights for the video to get the views count
+          final insightsUrl =
+              'https://graph.facebook.com/v17.0/$videoId/insights?metric=post_video_views&access_token=$accessToken';
+          final insightsResponse = await http.get(Uri.parse(insightsUrl));
+
+          if (insightsResponse.statusCode == 200) {
+            final insightsData = json.decode(insightsResponse.body);
+            final insights = insightsData['data'] as List;
+
+            // Extract the video views count from the insights
+            final viewsData = insights.firstWhere(
+                    (metric) => metric['name'] == 'post_video_views',
+                orElse: () => null);
+
+            if (viewsData != null) {
+              int viewsValue = viewsData['values'][0]['value'] ?? 0;
+              totalViews += viewsValue;
+            }
+          } else {
+            print('Failed to fetch insights for video $videoId: ${insightsResponse.body}');
+          }
+        }
+      } else {
+        print('Failed to fetch videos: ${response.body}');
+      }
+    } catch (e) {
+      print('Error: $e');
+      rethrow;
     }
 
-    // Start fetching posts and page views
-    await Future.wait([
-      fetchPostsData(baseUrl),
-      fetchPageViews(pageViewsUrl),
-    ]);
+    return totalViews;
+  }
 
-    // Calculate metrics from the fetched posts
-    int totalReactions = allPosts.fold<int>(
-      0,
-          (sum, post) => sum + ((post['likes']?['summary']?['total_count'] ?? 0) as int),
+  Future<double> fetchVideoViewRate(String pageId, String accessToken) async {
+    // Construct the URL to fetch the list of videos from the page
+    String url =
+        'https://graph.facebook.com/v17.0/$pageId/videos?access_token=$accessToken';
+
+
+    int videoCount = 0;
+
+    try {
+      // Make the GET request to fetch the list of videos
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final videos = data['data'] as List;
+
+        // Loop through each video and fetch the insights for video views and reach
+        for (var video in videos) {
+          final videoId = video['id'];
+
+          // Fetch insights for the video to get the views and reach
+          final insightsUrl =
+              'https://graph.facebook.com/v17.0/$videoId/insights?metric=video_views_3s,reach&access_token=$accessToken';
+          final insightsResponse = await http.get(Uri.parse(insightsUrl));
+
+          if (insightsResponse.statusCode == 200) {
+            final insightsData = json.decode(insightsResponse.body);
+            final insights = insightsData['data'] as List;
+
+            // Extract the video views (3-seconds) and reach from the insights
+            final viewsData = insights.firstWhere(
+                    (metric) => metric['name'] == 'video_views_3s',
+                orElse: () => null);
+            final reachData = insights.firstWhere(
+                    (metric) => metric['name'] == 'reach',
+                orElse: () => null);
+
+            if (viewsData != null && reachData != null) {
+              final viewsValue = viewsData['values'][0]['value'] ?? 0;
+              final reachValue = reachData['values'][0]['value'] ?? 0;
+
+              if (reachValue > 0) {
+                // Calculate the 3-sec VVR for this video
+                final videoVVR = (viewsValue / reachValue) * 100;
+                totalVVR += videoVVR;
+                videoCount++;
+              }
+            }
+          } else {
+            print('Failed to fetch insights for video $videoId: ${insightsResponse.body}');
+          }
+        }
+      } else {
+        print('Failed to fetch videos: ${response.body}');
+      }
+    } catch (e) {
+      print('Error: $e');
+      rethrow;
+    }
+
+    // Calculate the average VVR if there are videos to average
+    if (videoCount > 0) {
+      return totalVVR / videoCount;
+    } else {
+      return 0.0;
+    }
+  }
+
+
+  Future<int> fetchFollowerCount(String pageId, String accessToken) async {
+    final String url =
+        'https://graph.facebook.com/v17.0/$pageId?fields=followers_count&access_token=$accessToken';
+
+    try {
+      // Make the API request
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+
+        // Extract and return the follower count
+        return totalFollowers=data['followers_count'] ?? 0;
+      } else {
+        print('Failed to fetch followers count: ${response.body}');
+        return 0;
+      }
+    } catch (e) {
+      print('Error fetching followers count: $e');
+      return 0;
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchPostInsights(String postId, String accessToken) async {
+    // Get today's date and the date one month before
+    final today = DateTime.now();
+    final oneMonthAgo = DateTime(today.year, today.month - 1, today.day);
+
+    // Format dates for the API
+    final formatter = DateFormat('yyyy-MM-dd');
+    final sinceDate = formatter.format(oneMonthAgo);
+    final untilDate = formatter.format(today);
+
+    // Construct API URL
+    final url =
+        'https://graph.facebook.com/v21.0/$postId/insights?fields=insights.metric(post_clicks)&since=$sinceDate&until=$untilDate&access_token=$accessToken';
+
+    try {
+      // Make the API call
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        // Parse and return the JSON response
+        return json.decode(response.body);
+      } else {
+        throw Exception(
+            'Failed to fetch insights: ${response.statusCode} - ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching insights: $e');
+    }
+  }
+
+  Future<void> fetchPostClicks(String postId, String accessToken) async {
+
+    final Uri url = Uri.parse(
+      'https://graph.facebook.com/v21.0/$pageId/posts?fields=insights.metric(post_clicks)&since=2024-11-04&until=2024-12-04&access_token=$accessToken',
     );
-    int totalComments = allPosts.fold<int>(
-      0,
-          (sum, post) => sum + ((post['comments']?['summary']?['total_count'] ?? 0) as int),
-    );
 
-    // Update UI state
-    setState(() {
-      pageMetrics['postsCount'] = allPosts.length;
-      pageMetrics['reactions'] = totalReactions;
-      pageMetrics['comments'] = totalComments;
-      pageMetrics['pageViews'] = totalPageViews; // Store the total page views
-    });
+    try {
+      final response = await http.get(url);
 
-    // Print the results
-    print('Total posts: ${allPosts.length}');
-    print('Total reactions: $totalReactions');
-    print('Total comments: $totalComments');
-    print('Total page views: $totalPageViews');
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+
+        // Loop through each post and extract the post_clicks value
+        for (var post in data['data']) {
+          final insights = post['insights']['data'];
+          for (var insight in insights) {
+            if (insight['name'] == 'post_clicks') {
+              postClicks = insight['values'][0]['value'];
+              print('Post Clicks: $postClicks');
+            }
+          }
+        }
+      } else {
+        print('Failed to load data: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error: $e');
+    }
+  }
+
+
+  Future<List<Map<String, dynamic>>> fetchPagePosts(String pageId, String accessToken) async {
+    String sinceDate = DateTime.now().subtract(Duration(days: 30)).toIso8601String(); // One month ago
+    String untilDate = DateTime.now().toIso8601String(); // Current date
+    final String url = 'https://graph.facebook.com/v17.0/$pageId/posts'
+        '?fields=full_picture,message,created_time,insights.metric(post_impressions,post_impressions_unique),likes.summary(true),shares.summary(true)'
+        '&since=$sinceDate'
+        '&until=$untilDate'
+        '&access_token=$accessToken';
+
+    List<Map<String, dynamic>> allPosts = [];
+    String? nextUrl = url;
+
+    try {
+      while (nextUrl != null) {
+        final response = await http.get(Uri.parse(nextUrl));
+
+        if (response.statusCode == 200) {
+          final Map<String, dynamic> data = jsonDecode(response.body);
+          posts = data['data'];
+          print(posts);
+
+          // Append current batch of posts to the list
+          allPosts.addAll(posts.cast<Map<String, dynamic>>());
+
+          // Get the next page URL if it exists
+          nextUrl = data['paging']?['next'];
+        } else {
+          throw Exception('Failed to fetch posts: ${response.body}');
+        }
+      }
+    } catch (e) {
+      print('Error fetching posts: $e');
+    }
+
+    return allPosts;
   }
 
 
@@ -253,31 +856,55 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 const SizedBox(width: 5),
                 // If the page is selected, show the selectedPageName
-                if (selectedPageName != null)
-                  Text(
-                    selectedPageName ?? "Select page", // Show default if no pages
-                    style: const TextStyle(
-                        fontSize: 16, color: Colors.black, fontFamily: 'Poppins'),
-                  ),
+                // if (selectedPageName != null)
+                //   Text(
+                //     selectedPageName ?? "Select page", // Show default if no pages
+                //     style: const TextStyle(
+                //         fontSize: 16, color: Colors.black, fontFamily: 'Poppins'),
+                //   ),
                 // If the pages list is not empty, show the DropdownButton
-                if (pages.isNotEmpty)
+                if (pages.isNotEmpty) ...[
+                  // Display the currently selected page or default text
+                  // Text(
+                  //   selectedPageName ?? "Select Page", // Default text if no page is selected
+                  //   style: const TextStyle(
+                  //     fontSize: 16,
+                  //     color: Colors.black,
+                  //     fontFamily: 'Poppins',
+                  //   ),
+                  // ),
+                  // DropdownButton to select a page
                   DropdownButton<String>(
+                    value: selectedPageName, // Initially null to display the hint
+                    hint: const Text(
+                      'Select Page', // Placeholder text
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.black,
+                        fontFamily: 'Poppins',
+                      ),
+                    ),
                     icon: const Icon(Icons.arrow_drop_down),
                     style: const TextStyle(
-                        color: Colors.black, fontFamily: 'Poppins'),
-                    underline: const SizedBox(), // Remove the line
+                      color: Colors.black,
+                      fontFamily: 'Poppins',
+                    ),
+                    underline: const SizedBox(), // Remove the underline
                     onChanged: (String? newPageName) {
-                      setState(() {
-                        selectedPageName = newPageName;
-                        final selectedPage = pages.firstWhere(
-                              (page) => page['name'] == newPageName,
-                        );
-                        selectedPageId = selectedPage['id'];
-                        pageAccessToken = selectedPage['access_token'];
-                      });
+                      if (newPageName != null) {
+                        setState(() {
+                          selectedPageName = newPageName; // Update selected page name
+                          final selectedPage = pages.firstWhere(
+                                (page) => page['name'] == newPageName,
+                          );
+                          selectedPageId = selectedPage['id'];
+                          pageAccessToken = selectedPage['access_token'];
+                        });
 
-                      // Call the method to fetch metrics for the selected page
-                      _fetchPageMetrics(selectedPageId!,pageAccessToken!);
+                        // Call the method to fetch metrics for the selected page
+                        // getNumberOfPosts(selectedPageId!, pageAccessToken!);
+                        _fetchSelectedPageDetails(selectedPageId!, pageAccessToken!);
+                      }
                     },
                     items: pages.map<DropdownMenuItem<String>>((page) {
                       return DropdownMenuItem<String>(
@@ -286,6 +913,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       );
                     }).toList(),
                   ),
+                ]
+
               ],
             ),
           ),
@@ -299,11 +928,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
-
-              Text("Posts by Count: $pageMetrics['reactions']", style: const TextStyle(fontSize: 15,
-              fontFamily: 'Poppins')),
-
+              // Text("Summary",style: TextStyle(fontSize: 25,fontWeight: FontWeight.bold,color: Colors.blue.shade900),),
+              // Text("Posts by Count: $pageMetrics['postsCount']", style: const TextStyle(fontSize: 15, fontFamily: 'Poppins')),
             ],
           ),
         ),
@@ -409,7 +1035,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   icon: Icons.content_paste_sharp,
                   title: "Content Feed",
                   onTap: () {
-                    Navigator.pop(context);
+                    Navigator.push(context, MaterialPageRoute(builder: (context)=>ContentfeedScreen(posts: posts,selectedPageName:selectedPageName!)));
                   },
                 ),
                 _buildDrawerItem(
@@ -433,7 +1059,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   icon: Icons.thumb_up,
                   title: "Engagement",
                   onTap: () {
-                    Navigator.pop(context);
+                    Navigator.push(context, MaterialPageRoute(builder: (context)=>EngagementScreen(numberOfPosts: numberOfPosts,selectedPageName:selectedPageName!,pageViews: pageViews,totalReactions: totalReactions,totalEngagements: totalEngagements,totalEngagementRate: totalEngagementRate, totalImpressions: totalImpressions, totalVVR: totalVVR,)));
                   },
                 ),
                 _buildDrawerItem(

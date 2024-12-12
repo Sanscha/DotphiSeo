@@ -1,9 +1,13 @@
-import 'package:dotphi_seo_app/pages/demo_screen.dart';
+import 'package:dotphi_seo_app/pages/submission_screen.dart';
 import 'package:dotphi_seo_app/pages/phoneverification_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
+import 'package:syncfusion_flutter_charts/charts.dart';
+import 'package:twitter_login/twitter_login.dart';
 import '../model/login_model.dart';
 import '../notification_services/notification_services.dart';
 import 'api_service.dart';
@@ -29,7 +33,7 @@ class _LoginScreennState extends State<LoginScreenn> {
   bool _isObscured = true;
 
   @override
-  void initState(){
+  void initState() {
     super.initState();
     notificationServices.requestNotificationPermission();
     notificationServices.firebaseInit();
@@ -39,11 +43,37 @@ class _LoginScreennState extends State<LoginScreenn> {
     });
   }
 
-  Future<UserCredential> signInWithFacebook() async{
-    final LoginResult loginResult=await FacebookAuth.instance.login();
-    final AuthCredential facebookAuthCredential=FacebookAuthProvider.credential('${loginResult.accessToken?.tokenString}');
+  Future<UserCredential> signInWithFacebook() async {
+    isLoading = true;
+    final LoginResult loginResult = await FacebookAuth.instance.login();
+    final AuthCredential facebookAuthCredential =
+        FacebookAuthProvider.credential(
+            '${loginResult.accessToken?.tokenString}');
+    isLoading = false;
     return FirebaseAuth.instance.signInWithCredential(facebookAuthCredential);
   }
+
+  Future<UserCredential> signInWithTwitter() async {
+    // Create a TwitterLogin instance
+    final twitterLogin = new TwitterLogin(
+        apiKey: 'gDaeOcK2ukTnJIeiKU4yfWGgk',
+        apiSecretKey:'qhhttDghKx5STS8fA0FBSgdrlMx2z2E7Rb3D1nWcErOzkZMvT0',
+        redirectURI: 'twittersdk://'
+    );
+
+    // Trigger the sign-in flow
+    final authResult = await twitterLogin.login();
+
+    // Create a credential from the access token
+    final twitterAuthCredential = TwitterAuthProvider.credential(
+      accessToken: authResult.authToken!,
+      secret: authResult.authTokenSecret!,
+    );
+    Navigator.push(context,MaterialPageRoute(builder: (context)=>NavBarScreen()));
+    // Once signed in, return the UserCredential
+    return await FirebaseAuth.instance.signInWithCredential(twitterAuthCredential);
+  }
+
 
   Future<void> login(String email, String password) async {
     bool isConnected;
@@ -81,7 +111,8 @@ class _LoginScreennState extends State<LoginScreenn> {
       return;
     }
 
-    ApiResponse<custom.User> apiResponse = await ApiService.login(email, password, fcmToken);
+    ApiResponse<custom.User> apiResponse =
+        await ApiService.login(email, password, fcmToken);
 
     if (apiResponse.status == Status.SUCCESS) {
       custom.User user = apiResponse.data!;
@@ -100,7 +131,8 @@ class _LoginScreennState extends State<LoginScreenn> {
         ),
       );
     } else if (apiResponse.status == Status.ERROR) {
-      CustomToast.show('Invalid email or password. Please enter correct details.');
+      CustomToast.show(
+          'Invalid email or password. Please enter correct details.');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -114,7 +146,6 @@ class _LoginScreennState extends State<LoginScreenn> {
     });
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -124,255 +155,304 @@ class _LoginScreennState extends State<LoginScreenn> {
           width: double.infinity,
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              begin: Alignment.topLeft, end: Alignment.bottomRight,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
               colors: [Colors.blue[900]!, Colors.blue[400]!],
             ),
           ),
           child: Column(
             children: [
               SizedBox(height: 100),
-              Image.asset('assets/images/dotphi.png',
-                width: 150, height: 150,
+              Image.asset(
+                'assets/images/dotphi.png',
+                width: 150,
+                height: 150,
               ),
               SizedBox(height: 20),
-
               Expanded(
                 child: Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(40), topRight: Radius.circular(40),
+                      topLeft: Radius.circular(40),
+                      topRight: Radius.circular(40),
                     ),
                   ),
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 30),
-                    child: Column(
-                      children: [
-                        SizedBox(height: 40),
-                        Text(
-                          'Welcome back!',
-                          style: TextStyle(
-                            fontSize: 24, fontFamily: 'Poppins',
-                            fontWeight: FontWeight.bold, color: Colors.blue[900],
-                          ),
-                        ),
-
-                        SizedBox(height: 15),
-                        Text(
-                          'Sign in to continue',
-                          style: TextStyle(
-                            fontSize: 14, fontFamily: 'Poppins', color: Colors.grey[600],
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        SizedBox(height: 40),
-                        TextField(
-                          controller: _emailController,
-                          decoration: InputDecoration(
-                            labelText: 'Email',
-                            filled: true,
-                            fillColor: Colors.grey[200],
-                            labelStyle: TextStyle(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.vertical,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 30),
+                      child: Column(
+                        children: [
+                          SizedBox(height: 40),
+                          Text(
+                            'Welcome back!',
+                            style: TextStyle(
+                              fontSize: 24,
                               fontFamily: 'Poppins',
-                              color: Colors.grey,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: BorderSide.none,
-                            ),
-                            contentPadding: EdgeInsets.symmetric(
-                              vertical: 15, horizontal: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue[900],
                             ),
                           ),
-                          style: TextStyle(
-                            fontSize: 16,
+                          SizedBox(height: 15),
+                          Text(
+                            'Sign in to continue',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontFamily: 'Poppins',
+                              color: Colors.grey[600],
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                        ),
-                        SizedBox(height: 20),
-                        Stack(
-                          children: [
-                            TextField(
-                              controller: _passwordController,
-                              decoration: InputDecoration(
-                                labelText: 'Password',
-                                filled: true,
-                                fillColor: Colors.grey[200],
-                                labelStyle: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  color: Colors.grey,
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  borderSide: BorderSide.none,
-                                ),
-                                contentPadding: EdgeInsets.symmetric(
-                                  vertical: 15, horizontal: 20,
-                                ),
+                          SizedBox(height: 40),
+                          TextField(
+                            controller: _emailController,
+                            decoration: InputDecoration(
+                              labelText: 'Email',
+                              filled: true,
+                              fillColor: Colors.grey[200],
+                              labelStyle: TextStyle(
+                                fontFamily: 'Poppins',
+                                color: Colors.grey,
                               ),
-                              style: TextStyle(fontSize: 16,),
-                              obscureText: _isObscured,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: BorderSide.none,
+                              ),
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical: 15,
+                                horizontal: 20,
+                              ),
                             ),
-                            Positioned(
-                              right: 0,
-                              bottom: 0,
-                              child: InkWell(
-                                onTap: () {
-                                  setState(() {
-                                    _isObscured = !_isObscured;
-                                  });
-                                },
-                                child: Padding(
-                                  padding: const EdgeInsets.all(12.0),
-                                  child: Icon(
-                                    _isObscured ? Icons.visibility_off : Icons.visibility,
-                                    size: 20,
+                            style: TextStyle(
+                              fontSize: 16,
+                            ),
+                          ),
+                          SizedBox(height: 20),
+                          Stack(
+                            children: [
+                              TextField(
+                                controller: _passwordController,
+                                decoration: InputDecoration(
+                                  labelText: 'Password',
+                                  filled: true,
+                                  fillColor: Colors.grey[200],
+                                  labelStyle: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    color: Colors.grey,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  contentPadding: EdgeInsets.symmetric(
+                                    vertical: 15,
+                                    horizontal: 20,
+                                  ),
+                                ),
+                                style: TextStyle(
+                                  fontSize: 16,
+                                ),
+                                obscureText: _isObscured,
+                              ),
+                              Positioned(
+                                right: 0,
+                                bottom: 0,
+                                child: InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      _isObscured = !_isObscured;
+                                    });
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(12.0),
+                                    child: Icon(
+                                      _isObscured
+                                          ? Icons.visibility_off
+                                          : Icons.visibility,
+                                      size: 20,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 30),
-                        ElevatedButton(
-                          onPressed: () {
-                            login(
-                              _emailController.text.toString(),
-                              _passwordController.text.toString(),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue[900],
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            padding: EdgeInsets.symmetric(vertical: 15),
+                            ],
                           ),
-                          child: Container(
-                            width: double.infinity,
-                            child: Center(
-                              child: Text(
-                                'LOGIN',
-                                style: TextStyle(
-                                  fontSize: 18, fontFamily: 'Poppins',
-                                  fontWeight: FontWeight.bold, color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(height:5),
-                        Align(
-                          alignment: Alignment.bottomRight,
-                          child: TextButton(
+                          SizedBox(height: 30),
+                          ElevatedButton(
                             onPressed: () {
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      ForgotPasswordScreen(selectedProjectCode: LoginScreenn.selectedProjectCode, projectUrl: LoginScreenn.projectUrl,),
-                                ),
+                              login(
+                                _emailController.text.toString(),
+                                _passwordController.text.toString(),
                               );
                             },
-                            child: Text(
-                              'Forgot password?',
-                              style: TextStyle(
-                                fontSize: 16, fontFamily: 'Poppins',
-                                fontWeight: FontWeight.bold, color: Colors.blue[900],
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue[900],
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              padding: EdgeInsets.symmetric(vertical: 15),
+                            ),
+                            child: Container(
+                              width: double.infinity,
+                              child: Center(
+                                child: Text(
+                                  'LOGIN',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontFamily: 'Poppins',
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        SizedBox(height:22),
-                        Text("Login as Guest",
-                            style: TextStyle(
-                              fontSize: 14, fontFamily: 'Poppins',
-                             )),
-                        SizedBox(height: 10,),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                        Container(
-                        child: ElevatedButton(
-                        onPressed: () async {
-                  try {
-                  // Call the signInWithFacebook function
-                  final userCredential = await signInWithFacebook();
+                          SizedBox(height: 5),
+                          Align(
+                            alignment: Alignment.bottomRight,
+                            child: TextButton(
+                              onPressed: () {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ForgotPasswordScreen(
+                                      selectedProjectCode:
+                                          LoginScreenn.selectedProjectCode,
+                                      projectUrl: LoginScreenn.projectUrl,
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: Text(
+                                'Forgot password?',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontFamily: 'Poppins',
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blue[900],
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 22),
+                          Text("Login as Guest",
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontFamily: 'Poppins',
+                              )),
+                          SizedBox(
+                            height: 10,
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              Container(
+                                child: ElevatedButton(
+                                  onPressed: () async {
+                                    try {
+                                      // Call the signInWithFacebook function
+                                      final userCredential =
+                                          await signInWithFacebook();
 
-                  // Navigate to another page upon successful login
-                  if (userCredential.user != null) {
-                    CustomToast.show('Login successful', backgroundColor: Colors.green);
-                  Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                  builder: (context) => DemoScreen(), // Replace `NextPage` with your desired screen
-                  ),
-                  );
-                  }
-                  } catch (e) {
-                  // Handle login error (optional)
-                  print('Error during Facebook login: $e');
-                      CustomToast.show('Facebook login failed. Please try again.', backgroundColor: Colors.red);
-                  }
-                  },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                                      // Navigate to another page upon successful login
+                                      if (userCredential.user != null) {
+                                        CustomToast.show('Login successful',
+                                            backgroundColor: Colors.green);
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                NavBarScreen(), // Replace `NextPage` with your desired screen
+                                          ),
+                                        );
+                                      }
+                                    } catch (e) {
+                                      // Handle login error (optional)
+                                      print('Error during Facebook login: $e');
+                                      CustomToast.show(
+                                          'Facebook login failed. Please try again.',
+                                          backgroundColor: Colors.red);
+                                    }
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    padding: EdgeInsets.symmetric(vertical: 10),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Image.asset(
+                                        'assets/images/facebook.png',
+                                        width: 30.0, // Set the width of the image
+                                        height:
+                                            30.0, // Set the height of the image
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                child: ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (context) =>
+                                                  GoogleloginScreen()));
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      padding: EdgeInsets.symmetric(vertical: 10),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Image.asset(
+                                          'assets/images/google.png',
+                                          width:
+                                              30.0, // Set the width of the image
+                                          height:
+                                              30.0, // Set the height of the image
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ],
+                                    )),
+                              ),
+                              Container(
+                                child: ElevatedButton(
+                                    onPressed: () {
+                                      signInWithTwitter();
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      padding: EdgeInsets.symmetric(vertical: 10),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Image.asset(
+                                          'assets/images/twitter.png',
+                                          width:
+                                              30.0, // Set the width of the image
+                                          height:
+                                              30.0, // Set the height of the image
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ],
+                                    )),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                      padding: EdgeInsets.symmetric(vertical: 10),
-                    ),
-                    child: Row(
-                      children: [
-                        Image.asset(
-                          'assets/images/facebook.png',
-                          width: 30.0, // Set the width of the image
-                          height: 30.0, // Set the height of the image
-                          fit: BoxFit.cover,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                            Container(
-                              child: ElevatedButton(onPressed: (){
-                                Navigator.push(context, MaterialPageRoute(builder: (context)=>GoogleloginScreen()));
-                              },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    padding: EdgeInsets.symmetric(vertical: 10),
-                                  ),
-                                  child: Row(children: [
-                                    Image.asset('assets/images/google.png',
-                                      width: 30.0,  // Set the width of the image
-                                      height: 30.0, // Set the height of the image
-                                      fit: BoxFit.cover,),
-                                  ],)),
-                            ),
-                            Container(
-                              child: ElevatedButton(onPressed: (){
-                                Navigator.push(context, MaterialPageRoute(builder: (context)=>PhoneverificationScreen()));
-                              },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    padding: EdgeInsets.symmetric(vertical: 10),
-                                  ),
-                                  child: Row(children: [
-                                    Image.asset('assets/images/phone.png',
-                                      width: 30.0,  // Set the width of the image
-                                      height: 30.0, // Set the height of the image
-                                      fit: BoxFit.cover,),
-                                  ],)),
-                            ),
-                          ],
-                        ),
-                      ],
                     ),
                   ),
                 ),

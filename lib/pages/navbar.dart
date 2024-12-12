@@ -14,17 +14,15 @@ import 'leads_screen.dart';
 import 'login_screen.dart';
 
 class NavBarScreen extends StatefulWidget {
-  final User user;
-  final selectedProjectCode;
-  final String projectUrl;
+  final User? user; // Made nullable
+  final String? selectedProjectCode; // Made nullable
+  final String? projectUrl; // Made nullable
 
   NavBarScreen({
     Key? key,
-    required this.user,
-
-
-    required this.projectUrl,
-    required this.selectedProjectCode,
+    this.user, // No longer required
+    this.projectUrl, // No longer required
+    this.selectedProjectCode, // No longer required
   }) : super(key: key);
 
   @override

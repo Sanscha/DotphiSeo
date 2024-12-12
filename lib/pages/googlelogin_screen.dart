@@ -1,5 +1,5 @@
 import 'package:animated_text_kit/animated_text_kit.dart';
-import 'package:dotphi_seo_app/pages/demo_screen.dart';
+import 'package:dotphi_seo_app/pages/submission_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -57,7 +57,7 @@ class _GoogleloginScreenState extends State<GoogleloginScreen> with SingleTicker
 
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => DemoScreen()),
+        MaterialPageRoute(builder: (context) => SubmissionScreen()),
       );
     } on FirebaseAuthException catch (e) {
       CustomToast.show('Failed to log in: ${e.message}', backgroundColor: Colors.red);
@@ -308,7 +308,7 @@ class _GoogleSignUpScreenState extends State<GoogleSignUpScreen> {
       // Navigate to another screen or home screen upon successful sign-up
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => DemoScreen()),
+        MaterialPageRoute(builder: (context) => SubmissionScreen()),
       );
 
     } on FirebaseAuthException catch (e) {

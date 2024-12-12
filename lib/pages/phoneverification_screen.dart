@@ -1,4 +1,4 @@
-import 'package:dotphi_seo_app/pages/demo_screen.dart';
+import 'package:dotphi_seo_app/pages/submission_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -31,7 +31,7 @@ class _PhoneverificationScreenState extends State<PhoneverificationScreen> {
         await FirebaseAuth.instance.signInWithCredential(credential);
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => DemoScreen()),
+          MaterialPageRoute(builder: (context) => SubmissionScreen()),
         ); // Navigate to Home on success
       },
       verificationFailed: (FirebaseAuthException e) {
@@ -285,7 +285,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       await FirebaseAuth.instance.signInWithCredential(credential);
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => DemoScreen()),
+        MaterialPageRoute(builder: (context) => SubmissionScreen()),
       );
     } catch (e) {
       print("Error signing in: $e");

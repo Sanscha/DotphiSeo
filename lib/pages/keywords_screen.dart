@@ -8,14 +8,16 @@ import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
 
 class KeywordScreen extends StatefulWidget {
-  final User user;
-  final selectedProjectCode;
-  final String projectUrl;
+  final User? user; // Made nullable
+  final String? selectedProjectCode; // Made nullable
+  final String? projectUrl; // Made nullable
 
-
-  KeywordScreen({required this.user, required this.selectedProjectCode,
-    required this.projectUrl,
-  });
+  KeywordScreen({
+    Key? key,
+    this.user, // No longer required
+    this.selectedProjectCode, // No longer required
+    this.projectUrl, // No longer required
+  }) : super(key: key);
 
   @override
   _KeywordScreenState createState() => _KeywordScreenState();
@@ -301,13 +303,15 @@ class _KeywordScreenState extends State<KeywordScreen> {
     searchController.clear();
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => KeywordDetailScreen(
-          data: data,
-          user: widget.user,
-            projectUrl: widget.projectUrl, selectedProjectCode: widget.selectedProjectCode,
-        ),
-      ),
+        MaterialPageRoute(
+          builder: (context) => KeywordDetailScreen(
+            data: data,
+            user: widget.user!, // Use the non-null assertion operator if you're sure it's not null
+            projectUrl: widget.projectUrl!,
+            selectedProjectCode: widget.selectedProjectCode,
+          ),
+        )
+
     );
   }
 

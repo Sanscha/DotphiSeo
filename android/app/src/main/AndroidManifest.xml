@@ -46,6 +46,15 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="com.dotphi.dotphi_seo_app" android:host="oauth2redirect" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- Accepts URIs that begin with "example://gizmos” -->
+                <!-- Registered Callback URLs in TwitterApp -->
+                <data android:scheme="twittersdk"
+                    /> <!-- host is option -->
+            </intent-filter>
         </activity>
 
         <activity android:name="com.facebook.FacebookActivity"

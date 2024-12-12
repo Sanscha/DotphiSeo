@@ -23,16 +23,16 @@ import 'leads_screen.dart';
 import 'notification_screen.dart';
 
 class PaidLeadsScreen extends StatefulWidget {
-  final User user;
-  final selectedProjectCode;
-  final String projectUrl;
+  final User? user; // Made nullable
+  final String? selectedProjectCode; // Made nullable
+  final String? projectUrl; // Made nullable
 
   PaidLeadsScreen({
-    required this.user,
-    required this.selectedProjectCode,
-    required this.projectUrl,
-  });
-
+    Key? key,
+    this.user, // No longer required
+    this.selectedProjectCode, // No longer required
+    this.projectUrl, // No longer required
+  }) : super(key: key);
   @override
   _PaidLeadsScreenState createState() => _PaidLeadsScreenState();
 }
@@ -460,7 +460,7 @@ class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
           showInAppNotification(
             title: 'Follow-up Reminder',
             message: 'Follow-up scheduled for today',
-              projectUniqueCode:widget.selectedProjectCode,
+              projectUniqueCode:widget.selectedProjectCode!,
               campaignId:campaignId!,
           );
         }
@@ -1358,7 +1358,7 @@ class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
                                   builder: (context) => GroupsScreen(
                                         onGroupUpdated: () {},
                                         group: {},
-                                        projectCode: widget.selectedProjectCode, uniqueId: campaignId!,
+                                        projectCode: widget.selectedProjectCode!, uniqueId: campaignId!,
 
                                       )),
                             );
@@ -1550,7 +1550,7 @@ class _PaidLeadsScreenState extends State<PaidLeadsScreen> {
                                                         MaterialPageRoute(
                                                           builder: (context) => LeadDetailsScreen(
                                                             lead: lead,
-                                                            user: widget.user,
+                                                            user: widget.user!,
                                                             projectUrl: _projectUrl ?? '',
                                                             selectedProjectCode: selectedProjectCode ?? '',
                                                           ),

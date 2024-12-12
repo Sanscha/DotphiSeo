@@ -16,8 +16,13 @@ class FacebookLoginButton extends StatelessWidget {
   Future<void> _handleLogin(BuildContext context) async {
     try {
       final LoginResult result = await FacebookAuth.instance.login(
-        permissions: ['email', 'public_profile', 'pages_read_engagement'],
-      );
+        permissions: [ 'email',
+          'public_profile',
+          'pages_read_engagement',
+          'pages_show_list',
+          'read_insights', // Add permission for reading insights
+          'ads_management' // Add permission for accessing ads data (if required)],
+      ]);
 
       if (result.status == LoginStatus.success) {
         final accessToken = result.accessToken?.tokenString;

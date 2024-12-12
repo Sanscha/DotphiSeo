@@ -8,14 +8,17 @@ import '../model/login_model.dart';
 import '../notification_services/notification_provider.dart';
 import 'leads_screen.dart' ;
 class NotificationHistoryScreen extends StatefulWidget {
-  final selectedProjectCode;
-  final User user;
-  final String projectUrl;
+  final User? user; // Made nullable
+  final String? selectedProjectCode; // Made nullable
+  final String? projectUrl; // Made nullable
 
+  NotificationHistoryScreen({
+    Key? key,
+    this.user, // No longer required
+    this.selectedProjectCode, // No longer required
+    this.projectUrl, // No longer required
+  }) : super(key: key);
 
-  NotificationHistoryScreen({required this.user, required this.selectedProjectCode,
-    required this.projectUrl,
-  });
 
   @override
   _NotificationHistoryScreenState createState() =>

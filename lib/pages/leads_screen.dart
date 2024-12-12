@@ -23,15 +23,16 @@ import '../notification_services/notification_handler.dart';
 import 'notification_screen.dart';
 
 class ApiScreen extends StatefulWidget {
-  final User user;
-  final selectedProjectCode;
-  final String projectUrl;
+  final User? user; // Made nullable
+  final String? selectedProjectCode; // Made nullable
+  final String? projectUrl; // Made nullable
 
   ApiScreen({
-    required this.user,
-    required this.selectedProjectCode,
-    required this.projectUrl,
-  });
+    Key? key,
+    this.user, // No longer required
+    this.selectedProjectCode, // No longer required
+    this.projectUrl, // No longer required
+  }) : super(key: key);
 
   @override
   _ApiScreenState createState() => _ApiScreenState();
@@ -595,7 +596,7 @@ class _ApiScreenState extends State<ApiScreen> {
             showInAppNotification(
               title: 'Follow-up Reminder',
               message: 'Follow-up scheduled for today',
-              projectUniqueCode: widget.selectedProjectCode,
+              projectUniqueCode: widget.selectedProjectCode!,
               campaignId: campaignId!,
             );
           }
@@ -1363,9 +1364,9 @@ class _ApiScreenState extends State<ApiScreen> {
                                   builder: (context) => GroupsScreen(
                                         onGroupUpdated: () {},
                                         group: {},
-                                        projectCode: widget.selectedProjectCode,
+                                        projectCode: widget.selectedProjectCode!,
                                         uniqueId:
-                                            widget.user.project_unique_code,
+                                            widget.user!.project_unique_code,
                                       )),
                             );
                           }
@@ -1759,17 +1760,18 @@ class _ApiScreenState extends State<ApiScreen> {
 }
 
 class DetailScreen extends StatefulWidget {
-  final Map<String, dynamic>? data;
-  final User user;
-  final String projectUrl;
-  final selectedProjectCode;
+  final Map<String, dynamic>? data; // Nullable
+  final User? user; // Made nullable
+  final String? projectUrl; // Made nullable
+  final String? selectedProjectCode; // Made nullable
 
   DetailScreen({
-    this.data,
-    required this.user,
-    required this.projectUrl,
-    this.selectedProjectCode,
-  });
+    Key? key,
+    this.data, // No longer required
+    this.user, // No longer required
+    this.projectUrl, // No longer required
+    this.selectedProjectCode, // No longer required
+  }) : super(key: key);
 
   @override
   State<DetailScreen> createState() => _DetailScreenState();
@@ -1816,8 +1818,8 @@ class _DetailScreenState extends State<DetailScreen>
   void initState() {
     // TODO: implement initState
     super.initState();
-    _getContactStatus(widget.selectedProjectCode, widget.data?['name']);
-    _loadGroups(widget.user.project_unique_code);
+    _getContactStatus(widget.selectedProjectCode!, widget.data?['name']);
+    _loadGroups(widget.user!.project_unique_code);
     _loadUserGroups();
     _loadFollowUpDateForUser(widget.data?['name']);
     _loadCounts();
@@ -1826,11 +1828,11 @@ class _DetailScreenState extends State<DetailScreen>
         widget.data?['id']; // Choose either seo_id or id
     String type = widget.data?['seo_id'] != null ? 'seo' : 'live';
     print('fetching groups');
-    fetchUserGroups(widget.user.project_unique_code, userId, type);
+    fetchUserGroups(widget.user!.project_unique_code, userId, type);
   }
 
   void didPopNext() {
-    _loadGroups(widget.user.project_unique_code);
+    _loadGroups(widget.user!.project_unique_code);
     _loadUserGroups();
     _loadFollowUpDateForUser(widget.data?['name']);
     _loadFollowUpDate(widget.data?['name']);
@@ -2038,7 +2040,7 @@ class _DetailScreenState extends State<DetailScreen>
                       backgroundColor: Colors.blue.shade900,
                     ));
                     _updateContactStatus(
-                        widget.selectedProjectCode, widget.data?['name']);
+                        widget.selectedProjectCode!, widget.data?['name']);
 
                     Navigator.pop(context); // Close the bottom sheet
                   },
@@ -2135,9 +2137,9 @@ class _DetailScreenState extends State<DetailScreen>
                                         onGroupUpdated: _onGroupUpdated,
                                         group: {},
                                         projectCode:
-                                            widget.user.project_unique_code,
+                                            widget.user!.project_unique_code,
                                         uniqueId:
-                                            widget.user.project_unique_code,
+                                            widget.user!.project_unique_code,
                                       )));
                           _onGroupUpdated();
                         },
@@ -2160,11 +2162,11 @@ class _DetailScreenState extends State<DetailScreen>
                             MaterialPageRoute(
                               builder: (context) => CreateGroupPage(
                                 projectUniqueCode:
-                                    widget.user.project_unique_code,
+                                    widget.user!.project_unique_code,
                                 onGroupCreated: () async {
                                   // Load the updated groups after a new group is created
                                   await _loadGroups(
-                                      widget.user.project_unique_code);
+                                      widget.user!.project_unique_code);
 
                                   // Use setState to rebuild the UI with the updated list
                                   setState(() {});
@@ -2173,7 +2175,7 @@ class _DetailScreenState extends State<DetailScreen>
                                   Future.delayed(Duration(milliseconds: 150),
                                       () async {
                                     await _loadGroups(
-                                        widget.user.project_unique_code);
+                                        widget.user!.project_unique_code);
                                     setState(() {});
                                     _groupsBottomSheet(context);
                                   });
@@ -2280,7 +2282,7 @@ class _DetailScreenState extends State<DetailScreen>
                           TextStyle(color: Colors.white, fontFamily: 'Poppins'),
                     ),
                     onTap: () {
-                      _loadGroups(widget.user.project_unique_code);
+                      _loadGroups(widget.user!.project_unique_code);
                       Navigator.pop(context);
                       Future.delayed(Duration(milliseconds: 100), () {
                         _groupsBottomSheet(
@@ -2315,7 +2317,7 @@ class _DetailScreenState extends State<DetailScreen>
                         backgroundColor: Colors.blue.shade900,
                       ));
                       _updateContactStatus(
-                          widget.selectedProjectCode, widget.data?['name']);
+                          widget.selectedProjectCode!, widget.data?['name']);
                       Navigator.pop(context); // Close the bottom sheet
                     },
                   ),
@@ -2429,14 +2431,14 @@ class _DetailScreenState extends State<DetailScreen>
       _userGroupNames = userGroupNames;
     });
     // Ensure _loadGroups is called to refresh the list of groups if needed
-    await _loadGroups(widget.user.project_unique_code);
+    await _loadGroups(widget.user!.project_unique_code);
   }
 
   void _onGroupUpdated() {
     _loadUserGroups();
     // Reload the user groups when a group is updated
     _loadFollowUpDate(widget.data?['name']);
-    _loadGroups(widget.user.project_unique_code);
+    _loadGroups(widget.user!.project_unique_code);
     _loadUserGroups();
   }
 
@@ -2448,14 +2450,14 @@ class _DetailScreenState extends State<DetailScreen>
       final userId = widget.data?['seo_id'].toString();
       final liveId = widget.data?['id']
           .toString(); // assuming user_id is available in widget.lead
-      final projectUniqueCode = widget.user.project_unique_code;
+      final projectUniqueCode = widget.user?.project_unique_code;
 
       // Prepare the x-www-form-urlencoded request body with the three parameters
       Map<String, String> body = {
         'group_id': groupId,
         'user_id': userId!,
         'live_id': liveId!,
-        'project_unique_code': projectUniqueCode,
+        'project_unique_code': projectUniqueCode!,
       };
 
       // Send request to the API

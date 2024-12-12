@@ -40,6 +40,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int totalFollowers=0;
   int postClicks=0;
   late List<dynamic> posts;
+  int totalOrganicImpressions = 0;
+  int totalUniqueImpressions=0;
+  int totalPostsCount=0;
+
+
 
 
   @override
@@ -113,6 +118,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       await fetchTotalEngagementRate(pageId, accessToken);
       await fetchOrganicReachRate(pageId, accessToken);
       await fetchPagePosts(pageId, accessToken);
+      await fetchPostsAndCalculateImpressions(pageId, accessToken);
+      await fetchFollowerCount(pageId, accessToken);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error fetching selected page details: $e")),
@@ -695,7 +702,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
 
-  Future<int> fetchFollowerCount(String pageId, String accessToken) async {
+  Future<void> fetchFollowerCount(String pageId, String accessToken) async {
     final String url =
         'https://graph.facebook.com/v17.0/$pageId?fields=followers_count&access_token=$accessToken';
 
@@ -705,16 +712,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        final int followersCount = data['followers_count'] ?? 0;
 
-        // Extract and return the follower count
-        return totalFollowers=data['followers_count'] ?? 0;
+        // Use setState to update the followers count in the UI
+        setState(() {
+          totalFollowers = followersCount;
+        });
+
+        print('Total Followers: $totalFollowers');
       } else {
         print('Failed to fetch followers count: ${response.body}');
-        return 0;
+        setState(() {
+          totalFollowers = 0; // In case of failure, set followers to 0
+        });
       }
     } catch (e) {
       print('Error fetching followers count: $e');
-      return 0;
+      setState(() {
+        totalFollowers = 0; // In case of an error, set followers to 0
+      });
     }
   }
 
@@ -816,6 +832,68 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return allPosts;
   }
 
+  Future<void> fetchPostsAndCalculateImpressions(String pageId, String accessToken) async {
+    // Calculate `since` and `until` dates
+    final DateTime today = DateTime.now();
+    final DateTime oneMonthAgo = DateTime(today.year, today.month - 1, today.day);
+    final String since = oneMonthAgo.toIso8601String().split('T').first;
+    final String until = today.toIso8601String().split('T').first;
+
+    final String url =
+        'https://graph.facebook.com/v21.0/$pageId/posts?fields=insights.metric(post_impressions_organic,post_impressions_organic_unique)&since=$since&until=$until&period=month';
+
+    try {
+      final response = await http.get(Uri.parse('$url&access_token=$accessToken'));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        // Reset totals before calculation
+        setState(() {
+          totalOrganicImpressions = 0;
+          totalUniqueImpressions = 0;
+          totalPostsCount = 0; // New variable to store post count
+        });
+
+        // Calculate total impressions and post count
+        if (data['data'] != null) {
+          for (var post in data['data']) {
+            // Increment the post count
+            setState(() {
+              totalPostsCount += 1;
+            });
+
+            if (post['insights'] != null && post['insights']['data'] != null) {
+              for (var metric in post['insights']['data']) {
+                if (metric['name'] == 'post_impressions_organic') {
+                  // Add to totalOrganicImpressions
+                  final num value = metric['values'][0]['value'];
+                  setState(() {
+                    totalOrganicImpressions += value.toInt();
+                  });
+                } else if (metric['name'] == 'post_impressions_organic_unique') {
+                  // Add to totalUniqueImpressions
+                  final num value = metric['values'][0]['value'];
+                  setState(() {
+                    totalUniqueImpressions += value.toInt();
+                  });
+                }
+              }
+            }
+          }
+        }
+
+        print('Total Organic Impressions: $totalOrganicImpressions');
+        print('Total Unique Impressions: $totalUniqueImpressions');
+        print('Total Posts Count: $totalPostsCount'); // Print the post count
+      } else {
+        print('Failed to fetch posts. Status code: ${response.statusCode}');
+        print('Response: ${response.body}');
+      }
+    } catch (e) {
+      print('An error occurred: $e');
+    }
+  }
 
   void _logoutFacebook(BuildContext context) async {
     try {
@@ -921,19 +999,135 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       ),
       drawer: _buildDrawer(context), // Drawer as usual
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.vertical,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Text("Summary",style: TextStyle(fontSize: 25,fontWeight: FontWeight.bold,color: Colors.blue.shade900),),
-              // Text("Posts by Count: $pageMetrics['postsCount']", style: const TextStyle(fontSize: 15, fontFamily: 'Poppins')),
-            ],
+      body: Container(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 15.0,top: 10.0),
+              child: Text('Summary',style: TextStyle(
+                color: Colors.blue.shade900,
+                fontFamily: 'Poppins',
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),),
+            ),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(10.0),
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.42, // 80% of screen width
+              height: MediaQuery.of(context).size.height * 0.30, // Set the desired height
+              child: Card(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        'Post Impressions',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          color: Colors.blue.shade900,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Divider(
+                      color: Colors.blue.shade900, // Line color
+                      thickness: 2.0, // Line thickness
+
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        totalOrganicImpressions.toString(),
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    Divider(),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        'Organic Reach Rate (ORR)',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          color: Colors.blue.shade900,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        (((totalUniqueImpressions/totalFollowers)*100)/numberOfPosts).toStringAsFixed(2).toString(),
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
+
+          Padding(
+            padding: const EdgeInsets.all(10.0),
+            child: Container(
+              width:  MediaQuery.of(context).size.width * 0.42, // 80% of screen width // Set the desired width
+              height: MediaQuery.of(context).size.height * 0.30, // Set the desired height
+              child: Card(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        'Followers',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          color: Colors.blue.shade900,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Divider(
+                      color: Colors.blue.shade900, // Line color
+                      thickness: 2.0,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        totalFollowers.toString(),
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      )
+
+      ],
         ),
-      ),
+      )
     );
   }
 

@@ -18,15 +18,17 @@ import 'package:http/http.dart' as http;
 import 'notification_screen.dart';
 
 class HomeScreenn extends StatefulWidget {
-  final selectedProjectCode;
-  final User user;
-  final String projectUrl;
+  final User? user; // Made nullable
+  final String? selectedProjectCode; // Made nullable
+  final String? projectUrl; // Made nullable
 
   HomeScreenn({
-    required this.user,
-    required this.selectedProjectCode,
-    required this.projectUrl,
-  });
+    Key? key,
+    this.user, // No longer required
+    this.selectedProjectCode, // No longer required
+    this.projectUrl, // No longer required
+  }) : super(key: key);
+
 
   @override
   State<HomeScreenn> createState() => _HomeScreennState();

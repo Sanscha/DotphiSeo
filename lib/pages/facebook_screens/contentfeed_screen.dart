@@ -70,7 +70,7 @@ class _ContentfeedScreenState extends State<ContentfeedScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8.0),
                       child: Text(
-                        'Post Impressions: ${post['insights']}',
+                        'Post Impressions: ${post['data'][0]['values'][0]['value']}',
                         style: TextStyle(
                           color: Colors.black,
                           fontFamily: 'Poppins',
@@ -78,10 +78,11 @@ class _ContentfeedScreenState extends State<ContentfeedScreen> {
                         ),
                       ),
                     ),
+
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8.0),
                       child: Text(
-                        'Post Impressions Unique: $postImpressionsUnique',
+                        'Post Impressions Unique: ${post['insights']}',
                         style: TextStyle(
                           color: Colors.black,
                           fontFamily: 'Poppins',

@@ -7,15 +7,21 @@ import 'login_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ProfileScreen extends StatefulWidget {
-  final User user;
-  final String projectUrl;
-  final String? selectedProjectCode;
+  final User? user; // Made nullable
+  final String? projectUrl; // Made nullable
+  final String? selectedProjectCode; // Made nullable
 
-  ProfileScreen({required this.user,required this.projectUrl, required this.selectedProjectCode,});
+  ProfileScreen({
+    Key? key,
+    this.user, // No longer required
+    this.projectUrl, // No longer required
+    this.selectedProjectCode, // No longer required
+  }) : super(key: key);
 
   @override
   _ProfileScreenState createState() => _ProfileScreenState();
 }
+
 
 class _ProfileScreenState extends State<ProfileScreen> {
   User? user;
@@ -150,7 +156,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           radius: 50,
                                           backgroundColor: Colors.blue[900],
                                           child: Text(
-                                            widget.user.username.substring(0, 2),
+                                            widget.user!.username.substring(0, 2),
                                             style: TextStyle(
                                               fontFamily: 'Poppins', // Reference the family name here
                                               fontWeight: FontWeight.bold,
@@ -202,7 +208,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       size: 28,
                                       color: Colors.black,),
                                     title: Text(
-                                      widget.user.username,
+                                      widget.user!.username,
                               style: const TextStyle(
                                 fontFamily: 'Poppins', // Reference the family name here
 
@@ -234,7 +240,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     color: Colors.black,
                                   ),
                                   title: Text(
-                                    widget.user.email,
+                                    widget.user!.email,
                                     style: const TextStyle(
                                       fontFamily: 'Poppins', // Reference the family name here
                                       fontSize: 13,
@@ -264,7 +270,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     color: Colors.black,
                                   ),
                                   title: Text(
-                                    widget.user.phone,
+                                    widget.user!.phone,
                                     style: const TextStyle(
                                       fontFamily: 'Poppins', // Reference the family name here
                                       fontSize: 15,

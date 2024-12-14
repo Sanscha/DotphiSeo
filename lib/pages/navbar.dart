@@ -16,13 +16,14 @@ import 'login_screen.dart';
 class NavBarScreen extends StatefulWidget {
   final User? user; // Made nullable
   final String? selectedProjectCode; // Made nullable
-  final String? projectUrl; // Made nullable
+  final String? projectUrl;
+  final String? displayName;// Made nullable
 
   NavBarScreen({
     Key? key,
     this.user, // No longer required
     this.projectUrl, // No longer required
-    this.selectedProjectCode, // No longer required
+    this.selectedProjectCode, this.displayName, // No longer required
   }) : super(key: key);
 
   @override
@@ -57,7 +58,7 @@ class _NavBarScreenState extends State<NavBarScreen> {
       // LivechatScreenn(user: widget.user, projectUrl: widget.projectUrl, selectedProjectCode: widget.selectedProjectCode,),
       SignInScreen(),
       KeywordScreen(user: widget.user, selectedProjectCode: widget.selectedProjectCode,projectUrl: widget.projectUrl),
-      ProfileScreen(user: widget.user, projectUrl: widget.projectUrl, selectedProjectCode: widget.selectedProjectCode,),
+      ProfileScreen(user: widget.user, projectUrl: widget.projectUrl, selectedProjectCode: widget.selectedProjectCode,username:widget.displayName),
     ];
   }
 

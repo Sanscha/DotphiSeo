@@ -84,9 +84,14 @@ class FacebookLoginButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: () => _handleLogin(context),
-      child: Text("Login with Facebook"),
+    return Container(
+      width: 300,
+      child: ElevatedButton(
+        onPressed: () => _handleLogin(context),
+        child: Text("Login with Facebook",style: TextStyle(fontFamily: 'Poppins',color: Colors.white),),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.blue.shade900
+      ),),
     );
   }
 }

@@ -31,6 +31,7 @@ class _LoginScreennState extends State<LoginScreenn> {
   TextEditingController _passwordController = TextEditingController();
   bool isLoading = false;
   bool _isObscured = true;
+  String? displayName;
 
   @override
   void initState() {
@@ -43,35 +44,96 @@ class _LoginScreennState extends State<LoginScreenn> {
     });
   }
 
-  Future<UserCredential> signInWithFacebook() async {
+
+  Future<firebase_auth.UserCredential> signInWithFacebook() async {
     isLoading = true;
+
+    // Facebook login
     final LoginResult loginResult = await FacebookAuth.instance.login();
-    final AuthCredential facebookAuthCredential =
-        FacebookAuthProvider.credential(
-            '${loginResult.accessToken?.tokenString}');
-    isLoading = false;
-    return FirebaseAuth.instance.signInWithCredential(facebookAuthCredential);
+
+    if (loginResult.status == LoginStatus.success) {
+      final AuthCredential facebookAuthCredential =
+      FacebookAuthProvider.credential('${loginResult.accessToken?.tokenString}');
+
+      // Sign in with Facebook credential
+      firebase_auth.UserCredential userCredential =
+      await FirebaseAuth.instance.signInWithCredential(facebookAuthCredential);
+
+      // Get the Firebase user
+      firebase_auth.User? user = userCredential.user;
+
+      displayName = user?.displayName; // Save the display name in a local variable
+
+      if (displayName != null) {
+        print('User display name: $displayName');
+      } else {
+        print('No display name available');
+      }
+
+      // Get the user profile (email, phone, etc.)
+      final userData = await FacebookAuth.instance.getUserData();
+
+      // Access user email and phone number
+      String? email = userData['email'];  // Email
+      String? phoneNumber = userData['phone']; // Phone number (if available)
+
+      print('User email: $email');
+      print('User phone number: $phoneNumber');
+
+      isLoading = false;
+      return userCredential;
+    } else {
+      isLoading = false;
+      throw Exception('Facebook login failed');
+    }
   }
 
-  Future<UserCredential> signInWithTwitter() async {
+
+
+  Future<UserCredential> signInWithTwitter(BuildContext context) async {
     // Create a TwitterLogin instance
-    final twitterLogin = new TwitterLogin(
-        apiKey: 'gDaeOcK2ukTnJIeiKU4yfWGgk',
-        apiSecretKey:'qhhttDghKx5STS8fA0FBSgdrlMx2z2E7Rb3D1nWcErOzkZMvT0',
-        redirectURI: 'twittersdk://'
+    final twitterLogin = TwitterLogin(
+      apiKey: 'gDaeOcK2ukTnJIeiKU4yfWGgk',
+      apiSecretKey: 'qhhttDghKx5STS8fA0FBSgdrlMx2z2E7Rb3D1nWcErOzkZMvT0',
+      redirectURI: 'twittersdk://',
     );
 
     // Trigger the sign-in flow
     final authResult = await twitterLogin.login();
 
-    // Create a credential from the access token
-    final twitterAuthCredential = TwitterAuthProvider.credential(
-      accessToken: authResult.authToken!,
-      secret: authResult.authTokenSecret!,
-    );
-    Navigator.push(context,MaterialPageRoute(builder: (context)=>NavBarScreen()));
-    // Once signed in, return the UserCredential
-    return await FirebaseAuth.instance.signInWithCredential(twitterAuthCredential);
+    if (authResult.authToken != null && authResult.authTokenSecret != null) {
+      // Create a credential from the access token
+      final twitterAuthCredential = TwitterAuthProvider.credential(
+        accessToken: authResult.authToken!,
+        secret: authResult.authTokenSecret!,
+      );
+
+      // Sign in with Firebase using the Twitter credential
+      final userCredential =
+      await FirebaseAuth.instance.signInWithCredential(twitterAuthCredential);
+
+      // Get the logged-in user
+      firebase_auth.User? user = userCredential.user;
+      print(user);
+
+      // Navigate to NavBarScreen and pass user details
+      if (user != null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => NavBarScreen(
+              displayName: user.displayName ?? "Unknown User",
+
+            ),
+          ),
+        );
+      }
+
+      // Return the UserCredential object
+      return userCredential;
+    } else {
+      throw Exception("Twitter sign-in failed");
+    }
   }
 
 
@@ -363,7 +425,7 @@ class _LoginScreennState extends State<LoginScreenn> {
                                           context,
                                           MaterialPageRoute(
                                             builder: (context) =>
-                                                NavBarScreen(), // Replace `NextPage` with your desired screen
+                                                NavBarScreen(displayName: displayName,), // Replace `NextPage` with your desired screen
                                           ),
                                         );
                                       }
@@ -427,7 +489,7 @@ class _LoginScreennState extends State<LoginScreenn> {
                               Container(
                                 child: ElevatedButton(
                                     onPressed: () {
-                                      signInWithTwitter();
+                                      signInWithTwitter(context);
                                     },
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.white,

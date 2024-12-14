@@ -818,18 +818,21 @@ class _SignInScreenState extends State<SignInScreen> {
           child: _user == null
               ? Column(
                 children: [
-                  ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue.shade900),
-                      onPressed: _signInWithGoogle,
-                      child: Text(
-                        'Sign in to Google Search Console',
-                        style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white),
+                  Container(
+                    width: 300,
+                    child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue.shade900),
+                        onPressed: _signInWithGoogle,
+                        child: Text(
+                          'Sign in to Google Search Console',
+                          style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white),
+                        ),
                       ),
-                    ),
+                  ),
                   FacebookLoginButton(onLoginSuccess: (String accessToken) {  },)
                 ],
               )
